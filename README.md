@@ -92,7 +92,11 @@ Built by [Avaneesh Aroor](https://github.com/avaneesh1830).
 
 ## Run it locally
 
+You need [Node.js](https://nodejs.org) installed. Then:
+
 ```bash
+git clone https://github.com/avaneesh1830/TeamUp.git
+cd TeamUp
 npm install
 npm start
 ```
@@ -100,6 +104,8 @@ npm start
 Open http://localhost:3000. Data lives in `data.json` (auto-created; delete to reset).
 
 ## Deployment
+
+> 🌐 **If deployed, the URL will be posted here.**
 
 Needs any host with a persistent disk (it writes `data.json`):
 
@@ -111,4 +117,4 @@ Needs any host with a persistent disk (it writes `data.json`):
 
 ---
 
-<p align="center"><b>Made for PES ECity campus</b> 🧡</p>
+<p align="center"><b>Made for PESU</b> ❤️</p>
