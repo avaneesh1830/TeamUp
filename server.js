@@ -316,9 +316,16 @@ app.get('/api/students', auth, (req, res) => {
     .slice(0, 20)
     .map((u) => {
       const t = teamOf(u.srn);
-      const out = { ...publicUser(u), team: t ? { domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
+      const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
       // if the searcher leads a team with open seats, say whether this student could join it
       if (amLeader && !t && u.srn !== req.user.srn) out.eligibleForMyTeam = joinBlock(myTeam, u);
+      // if the student is in a team, say whether the searcher could join that team
+      if (t && !t.members.includes(req.user.srn)) {
+        out.team.joinBlock = myTeam ? 'Already in a team' : joinBlock(t, req.user);
+        out.team.requested = !!db.requests.find(
+          (r) => r.teamId === t.id && r.srn === req.user.srn && r.status === 'pending'
+        );
+      }
       return out;
     });
   res.json(results);

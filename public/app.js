@@ -302,10 +302,21 @@ function studentResultsHtml(list) {
     return `<div class="empty"><span class="big">🤷</span>No student matches “${esc(studentQuery)}”.</div>`;
   return list
     .map((s) => {
-      let status;
-      if (s.team)
+      let status, joinBtn = '';
+      if (s.team) {
         status = `<span class="badge taken">In team · ${esc(s.team.domain)}${s.team.full ? ' (full)' : ''}</span>`;
-      else status = `<span class="badge free">Available — can join a team</span>`;
+        // let the searcher request to join this student's team right here
+        if (s.team.requested) {
+          joinBtn = `<button class="btn small primary" disabled type="button">Request sent ✓</button>`;
+        } else if (s.team.joinBlock === null) {
+          joinBtn = `<button class="btn small primary" data-joinsteam="${s.team.id}" type="button">Request to join their team</button>`;
+        } else if (typeof s.team.joinBlock === 'string') {
+          joinBtn = `<button class="btn small primary" disabled title="${esc(s.team.joinBlock)}" type="button">Request to join their team</button>
+            <p class="join-note">⚠️ ${esc(s.team.joinBlock)}</p>`;
+        }
+      } else {
+        status = `<span class="badge free">Available — can join a team</span>`;
+      }
       let eligible = '';
       if (s.eligibleForMyTeam === null)
         eligible = `<p class="join-note" style="background:var(--green-bg);color:var(--green-ink)">✅ Eligible for your team — ask them to send a request!</p>`;
@@ -314,6 +325,7 @@ function studentResultsHtml(list) {
       return `<div class="student-row">
         <div style="flex:1">${memberRow(s, null)}</div>
         <div>${status}</div>
+        ${joinBtn}
         ${eligible}
       </div>`;
     })
@@ -335,6 +347,16 @@ async function searchStudents() {
     // re-bind the "📂 n projects" toggles inside results
     $('studentResults').querySelectorAll('[data-toggle]').forEach((b) => {
       b.onclick = () => $(b.dataset.toggle).classList.toggle('hidden');
+    });
+    // join-their-team buttons
+    $('studentResults').querySelectorAll('[data-joinsteam]').forEach((b) => {
+      b.onclick = async () => {
+        try {
+          await api(`/teams/${b.dataset.joinsteam}/join`, 'POST');
+          toast('Request sent — waiting for the leader to accept', 'ok');
+          searchStudents();
+        } catch (x) { toast(x.message); }
+      };
     });
   } catch (x) { toast(x.message); }
 }
