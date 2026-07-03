@@ -360,6 +360,8 @@ footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 2
 .badge.branch { background: var(--accent-soft); color: var(--accent-dark); }
 .badge.open { background: var(--green-bg); color: var(--green-ink); }
 .badge.closed { background: var(--grey-bg); color: #a3a199; text-decoration: line-through; }
+.badge.free { background: var(--green-bg); color: var(--green-ink); }
+.badge.taken { background: var(--grey-bg); color: #8a887f; }
 .badge.status-pending { background: var(--amber-bg); color: var(--amber-ink); }
 .badge.status-accepted { background: var(--green-bg); color: var(--green-ink); }
 .badge.status-rejected { background: var(--red-bg); color: var(--red-ink); }
@@ -549,6 +551,20 @@ textarea:focus { outline: none; border-color: var(--accent); background: var(--c
 .prof-item:hover { background: var(--accent-soft); }
 .prof-item .pi-name { font-weight: 600; }
 .prof-item .pi-sub { font-size: 0.75rem; color: var(--muted); }
+
+/* ================= student search ================= */
+.student-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  animation: fadeUp 0.3s ease both;
+}
+.student-row:last-child { border-bottom: none; }
+.student-row .join-note { flex-basis: 100%; margin-top: 2px; }
+#studentResults { margin-top: 14px; }
 
 /* ================= profile / danger zone ================= */
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 10px; }

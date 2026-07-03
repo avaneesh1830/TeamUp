@@ -18,9 +18,10 @@ let token = localStorage.getItem('token');
 let me = null; // { user, team, incoming, outgoing }
 let teams = [];
 let professors = [];
-let activeTab = 'browse'; // browse | team | requests | profile
+let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
 let mentorQuery = '';
+let studentQuery = '';
 
 async function api(path, method = 'GET', body) {
   const res = await fetch('/api' + path, {
@@ -204,9 +205,10 @@ function render() {
     badge.classList.remove('hidden');
   } else badge.classList.add('hidden');
 
-  const views = { browse: browseHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml };
+  const views = { browse: browseHtml, students: studentsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml };
   $('content').innerHTML = views[activeTab]();
   bindActions();
+  if (activeTab === 'students' && studentQuery.trim()) searchStudents(); // re-fetch results after re-render
 }
 
 // ---------- tab: browse teams ----------
@@ -280,6 +282,61 @@ function browseHtml() {
       })
       .join('')
   );
+}
+
+// ---------- tab: students ----------
+function studentsHtml() {
+  return `<div class="section-head fade-up">
+    <div><h2>Students</h2><p>Search classmates by name or SRN — see who's free and who's already teamed up</p></div>
+  </div>
+  <div class="card">
+    <input id="studentSearch" placeholder="🔎 Type a name or SRN…" value="${esc(studentQuery)}" autocomplete="off" />
+    <div id="studentResults">
+      ${studentQuery.trim() ? '' : '<div class="empty"><span class="big">🎓</span>Start typing to find students.</div>'}
+    </div>
+  </div>`;
+}
+
+function studentResultsHtml(list) {
+  if (list.length === 0)
+    return `<div class="empty"><span class="big">🤷</span>No student matches “${esc(studentQuery)}”.</div>`;
+  return list
+    .map((s) => {
+      let status;
+      if (s.team)
+        status = `<span class="badge taken">In team · ${esc(s.team.domain)}${s.team.full ? ' (full)' : ''}</span>`;
+      else status = `<span class="badge free">Available — can join a team</span>`;
+      let eligible = '';
+      if (s.eligibleForMyTeam === null)
+        eligible = `<p class="join-note" style="background:var(--green-bg);color:var(--green-ink)">✅ Eligible for your team — ask them to send a request!</p>`;
+      else if (typeof s.eligibleForMyTeam === 'string')
+        eligible = `<p class="join-note">⚠️ Can't join your team: ${esc(s.eligibleForMyTeam)}</p>`;
+      return `<div class="student-row">
+        <div style="flex:1">${memberRow(s, null)}</div>
+        <div>${status}</div>
+        ${eligible}
+      </div>`;
+    })
+    .join('');
+}
+
+let studentTimer;
+async function searchStudents() {
+  const box = $('studentResults');
+  if (!box) return;
+  if (!studentQuery.trim()) {
+    box.innerHTML = '<div class="empty"><span class="big">🎓</span>Start typing to find students.</div>';
+    return;
+  }
+  try {
+    const list = await api('/students?q=' + encodeURIComponent(studentQuery.trim()));
+    if (!$('studentResults')) return; // user switched tabs mid-fetch
+    $('studentResults').innerHTML = studentResultsHtml(list);
+    // re-bind the "📂 n projects" toggles inside results
+    $('studentResults').querySelectorAll('[data-toggle]').forEach((b) => {
+      b.onclick = () => $(b.dataset.toggle).classList.toggle('hidden');
+    });
+  } catch (x) { toast(x.message); }
 }
 
 // ---------- tab: my team ----------
@@ -467,6 +524,15 @@ function bindActions() {
   document.querySelectorAll('[data-filter]').forEach((b) => {
     b.onclick = () => { filters.branch = b.dataset.filter; render(); };
   });
+  // students search (debounced so we don't hammer the server per keystroke)
+  const studentSearch = $('studentSearch');
+  if (studentSearch)
+    studentSearch.oninput = () => {
+      studentQuery = studentSearch.value;
+      clearTimeout(studentTimer);
+      studentTimer = setTimeout(searchStudents, 300);
+    };
+
   const bindSel = (id, key) => {
     const el = $(id);
     if (el) el.onchange = () => { filters[key] = el.value; render(); };
@@ -654,4 +720,5 @@ async function refresh() {
 }
 
 refresh();
-setInterval(() => { if (token && me) refresh(); }, 10000);
+// background sync every 30s (user actions always refresh instantly on their own)
+setInterval(() => { if (token && me) refresh(); }, 30000);

@@ -1,9 +1,11 @@
 const express = require('express');
+const compression = require('compression');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
+app.use(compression()); // gzip responses — the teams list shrinks ~10x
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -23,7 +25,20 @@ db.teams.forEach((t) => {
   if (!t.memberNotes) t.memberNotes = {};
   if (t.mentor === undefined) t.mentor = null;
 });
-const save = () => fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2));
+if (!db.log) db.log = [];
+
+// atomic write: never leaves a half-written data.json even if the process dies mid-save
+const save = () => {
+  const tmp = DATA_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
+  fs.renameSync(tmp, DATA_FILE);
+};
+
+// activity log: account creation, team joins/leaves, etc.
+const logEvent = (type, msg) => {
+  db.log.push({ time: new Date().toISOString(), type, msg });
+  if (db.log.length > 5000) db.log = db.log.slice(-4000); // keep it bounded
+};
 
 // ---------- professors (mentors) ----------
 const PROF_FILE = path.join(__dirname, 'professors.json');
@@ -125,7 +140,8 @@ function teamView(team, viewer) {
 app.post('/api/register', (req, res) => {
   const { name, srn, gender, branch, cgpa, password } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
-  if (!srn || !srn.trim()) return res.status(400).json({ error: 'SRN is required' });
+  if (name.trim().length > 60) return res.status(400).json({ error: 'Name too long (max 60 chars)' });
+  if (!srn || !srn.trim() || srn.trim().length > 20) return res.status(400).json({ error: 'SRN is required (max 20 chars)' });
   if (gender !== 'M' && gender !== 'F') return res.status(400).json({ error: 'Select male or female' });
   if (!BRANCHES.includes(branch)) return res.status(400).json({ error: 'Select your branch (CSE / AIML / ECE)' });
   const c = Number(cgpa);
@@ -148,6 +164,7 @@ app.post('/api/register', (req, res) => {
     token: crypto.randomUUID(),
   };
   db.users.push(user);
+  logEvent('account_created', `${user.name} (${user.srn}, ${branch}) registered`);
   save();
   res.json({ token: user.token });
 });
@@ -190,6 +207,7 @@ app.get('/api/me', auth, (req, res) => {
 app.post('/api/profile', auth, (req, res) => {
   const { name, gender, branch, cgpa, password } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
+  if (name.trim().length > 60) return res.status(400).json({ error: 'Name too long (max 60 chars)' });
   if (gender !== 'M' && gender !== 'F') return res.status(400).json({ error: 'Select male or female' });
   if (!BRANCHES.includes(branch)) return res.status(400).json({ error: 'Select your branch (CSE / AIML / ECE)' });
   const c = Number(cgpa);
@@ -268,13 +286,16 @@ app.delete('/api/account', auth, (req, res) => {
       db.requests.forEach((r) => {
         if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
       });
+      logEvent('team_disbanded', `Team "${team.domain}" disbanded (leader ${srn} deleted account)`);
     } else {
       team.members = team.members.filter((s) => s !== srn);
       delete team.memberNotes[srn];
+      logEvent('member_left', `${req.user.name} (${srn}) left team "${team.domain}" (account deleted)`);
     }
   }
   db.requests = db.requests.filter((r) => r.srn !== srn);
   db.users = db.users.filter((u) => u.srn !== srn);
+  logEvent('account_deleted', `${req.user.name} (${srn}) deleted their account`);
   save();
   res.json({ ok: true });
 });
@@ -282,6 +303,30 @@ app.delete('/api/account', auth, (req, res) => {
 // ---------- professors ----------
 app.get('/api/professors', auth, (req, res) => {
   res.json(professors);
+});
+
+// ---------- student search ----------
+app.get('/api/students', auth, (req, res) => {
+  const q = (req.query.q || '').trim().toLowerCase();
+  if (!q) return res.json([]);
+  const myTeam = teamOf(req.user.srn);
+  const amLeader = myTeam && myTeam.leader === req.user.srn;
+  const results = db.users
+    .filter((u) => u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q))
+    .slice(0, 20)
+    .map((u) => {
+      const t = teamOf(u.srn);
+      const out = { ...publicUser(u), team: t ? { domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
+      // if the searcher leads a team with open seats, say whether this student could join it
+      if (amLeader && !t && u.srn !== req.user.srn) out.eligibleForMyTeam = joinBlock(myTeam, u);
+      return out;
+    });
+  res.json(results);
+});
+
+// ---------- activity log (accounts made, joins, leaves) ----------
+app.get('/api/log', auth, (req, res) => {
+  res.json(db.log.slice(-200).reverse());
 });
 
 // ---------- teams ----------
@@ -308,6 +353,7 @@ app.post('/api/teams', auth, (req, res) => {
   db.requests.forEach((r) => {
     if (r.srn === req.user.srn && r.status === 'pending') r.status = 'cancelled';
   });
+  logEvent('team_created', `${req.user.name} (${req.user.srn}) created team "${team.domain}" [${team.branch}]`);
   save();
   res.json(teamView(team, req.user));
 });
@@ -398,6 +444,7 @@ app.post('/api/requests/:id', auth, (req, res) => {
 
   team.members.push(candidate.srn);
   r.status = 'accepted';
+  logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domain}"${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
   // cancel the candidate's other pending requests
   db.requests.forEach((x) => {
     if (x.srn === candidate.srn && x.status === 'pending') x.status = 'cancelled';
@@ -422,9 +469,11 @@ app.post('/api/teams/:id/leave', auth, (req, res) => {
     db.requests.forEach((r) => {
       if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
     });
+    logEvent('team_disbanded', `${req.user.name} (${req.user.srn}) disbanded team "${team.domain}"`);
   } else {
     team.members = team.members.filter((s) => s !== req.user.srn);
     delete team.memberNotes[req.user.srn];
+    logEvent('member_left', `${req.user.name} (${req.user.srn}) left team "${team.domain}"`);
   }
   save();
   res.json({ ok: true });
