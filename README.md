@@ -44,15 +44,24 @@ Open http://localhost:3000
 All data is stored in `data.json` next to `server.js` (created automatically).
 Delete that file to reset everything.
 
-## Sharing with classmates
+## Deploying so classmates can use it
 
-`localhost` only works on your machine. To let the whole class use it:
+`localhost` only works on your machine.
+
+**Recommended: Railway (persistent data, ~free)**
+
+1. Push this folder to a GitHub repo
+2. [railway.app](https://railway.app) → Login with GitHub → New Project →
+   Deploy from GitHub repo → pick the repo
+3. In the service: **Settings → Volumes → Add volume**, mount path `/data`
+4. **Variables** tab → add `DATA_DIR=/data`
+5. **Settings → Networking → Generate Domain** → share that URL with the class
+
+The volume keeps `data.json` safe across restarts and redeploys.
+
+**Quick alternatives**
 
 - **Same WiFi:** run `npm start`, find your IP with `ipconfig getifaddr en0`,
   share `http://<your-ip>:3000`
-- **On the internet (free):** deploy to [Render](https://render.com) or
-  [Railway](https://railway.app) — create a "Web Service" from this folder,
-  build command `npm install`, start command `npm start`.
-  Note: on free tiers the `data.json` file may be wiped when the service
-  restarts — fine for a semester sign-up sprint, but export/back up the file
-  if the data matters.
+- **Render free tier** works but its disk is wiped on every deploy/idle-restart,
+  so all accounts and teams vanish regularly — not recommended for real sign-ups.
