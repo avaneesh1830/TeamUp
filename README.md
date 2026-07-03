@@ -21,9 +21,9 @@ Built by [Avaneesh Aroor](https://github.com/avaneesh1830).
 |---|---|
 | ![Browse Teams](docs/screenshots/browse-teams.png) | ![My Team](docs/screenshots/my-team.png) |
 
-| My Profile |
-|---|
-| ![My Profile](docs/screenshots/profile.png) |
+| Join Requests | My Profile |
+|---|---|
+| ![Requests](docs/screenshots/requests.png) | ![My Profile](docs/screenshots/profile.png) |
 
 ---
 
