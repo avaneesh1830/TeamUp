@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TeamUp — BTech Project Team Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="toast"></div>
+
+  <!-- ============ AUTH VIEW ============ -->
+  <div id="authView" class="auth-wrap hidden">
+    <div class="auth-card fade-up">
+      <div class="auth-hero">
+        <h1 class="brand">Team<span>Up</span></h1>
+        <p class="tagline">Find your BTech project team · 3rd &amp; 4th year</p>
+        <p class="campus-tag">Made for PES ECity campus</p>
+      </div>
+
+      <div class="tabs">
+        <button id="tabLogin" class="tab active" type="button">Login</button>
+        <button id="tabRegister" class="tab" type="button">Register</button>
+      </div>
+
+      <form id="loginForm">
+        <label>SRN <input id="loginSrn" required placeholder="PES1UG23CS001" /></label>
+        <label>Password <input id="loginPw" type="password" required /></label>
+        <button class="btn primary full" type="submit">Login</button>
+      </form>
+
+      <form id="registerForm" class="hidden">
+        <label>Full name <input id="regName" required placeholder="Your name" /></label>
+        <label>SRN <input id="regSrn" required placeholder="PES1UG23CS001" /></label>
+        <div class="row2">
+          <label>Branch
+            <select id="regBranch" required>
+              <option value="">Select…</option>
+              <option value="CSE">CSE</option>
+              <option value="AIML">AIML</option>
+              <option value="ECE">ECE</option>
+            </select>
+          </label>
+          <label>Gender
+            <select id="regGender" required>
+              <option value="">Select…</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+          </label>
+        </div>
+        <label>CGPA <input id="regCgpa" type="number" step="0.01" min="0" max="10" required placeholder="e.g. 8.25" /></label>
+        <p class="hint">A grade = 8+ · B = 7–8 · C = below 7. Others only see your grade letter, never your CGPA.</p>
+        <label>Password <input id="regPw" type="password" minlength="4" required /></label>
+        <button class="btn primary full" type="submit">Create account</button>
+      </form>
+
+      <p id="authError" class="error"></p>
+    </div>
+  </div>
+
+  <!-- ============ MAIN VIEW ============ -->
+  <div id="mainView" class="hidden">
+    <header>
+      <h1 class="brand">Team<span>Up</span></h1>
+      <div class="user-chip">
+        <div id="meAvatar" class="avatar"></div>
+        <div class="uinfo">
+          <span id="meName"></span>
+          <span id="meSub"></span>
+        </div>
+        <span id="meGrade" class="badge"></span>
+        <button id="logoutBtn" class="btn small ghost" type="button">Logout</button>
+      </div>
+    </header>
+
+    <nav class="main-tabs">
+      <button class="mtab active" data-tab="browse" type="button">Browse Teams</button>
+      <button class="mtab" data-tab="team" type="button">My Team</button>
+      <button class="mtab" data-tab="requests" type="button">Requests <span id="reqBadge" class="notif hidden"></span></button>
+      <button class="mtab" data-tab="profile" type="button">My Profile</button>
+    </nav>
+
+    <main><div id="content"></div></main>
+
+    <footer>
+      <p>Team rules: 4 members · at least one A, one B &amp; one C grade · 1–3 male &amp; 1–3 female · same branch only</p>
+      <p class="campus-tag">Made for PES ECity campus</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

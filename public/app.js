@@ -1,0 +1,657 @@
+// ---------- constants ----------
+const DOMAINS = [
+  'AI / Machine Learning',
+  'Web Development',
+  'Mobile App Development',
+  'Data Science',
+  'Cybersecurity',
+  'Blockchain',
+  'IoT / Embedded Systems',
+  'Cloud Computing',
+  'AR / VR',
+  'Robotics',
+];
+const BRANCHES = ['CSE', 'AIML', 'ECE'];
+
+// ---------- state & api ----------
+let token = localStorage.getItem('token');
+let me = null; // { user, team, incoming, outgoing }
+let teams = [];
+let professors = [];
+let activeTab = 'browse'; // browse | team | requests | profile
+let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
+let mentorQuery = '';
+
+async function api(path, method = 'GET', body) {
+  const res = await fetch('/api' + path, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { logout(); throw new Error('Session expired, please log in again'); }
+  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  return data;
+}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const initials = (name) => name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+// ---------- toast ----------
+let toastTimer;
+function toast(msg, type = 'err') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = ''), 3500);
+}
+
+// ---------- auth view ----------
+function showAuth() {
+  $('authView').classList.remove('hidden');
+  $('mainView').classList.add('hidden');
+}
+
+$('tabLogin').onclick = () => switchAuthTab(true);
+$('tabRegister').onclick = () => switchAuthTab(false);
+function switchAuthTab(login) {
+  $('tabLogin').classList.toggle('active', login);
+  $('tabRegister').classList.toggle('active', !login);
+  $('loginForm').classList.toggle('hidden', !login);
+  $('registerForm').classList.toggle('hidden', login);
+  $('authError').textContent = '';
+}
+
+$('loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api('/login', 'POST', { srn: $('loginSrn').value, password: $('loginPw').value });
+    setToken(r.token);
+  } catch (err) { $('authError').textContent = err.message; }
+};
+
+$('registerForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api('/register', 'POST', {
+      name: $('regName').value,
+      srn: $('regSrn').value,
+      branch: $('regBranch').value,
+      gender: $('regGender').value,
+      cgpa: $('regCgpa').value,
+      password: $('regPw').value,
+    });
+    setToken(r.token);
+  } catch (err) { $('authError').textContent = err.message; }
+};
+
+function setToken(t) {
+  token = t;
+  localStorage.setItem('token', t);
+  activeTab = 'browse';
+  refresh();
+}
+
+function logout() {
+  token = null;
+  me = null;
+  localStorage.removeItem('token');
+  showAuth();
+}
+$('logoutBtn').onclick = logout;
+
+// ---------- main tab nav ----------
+document.querySelectorAll('.mtab').forEach((b) => {
+  b.onclick = () => {
+    activeTab = b.dataset.tab;
+    render();
+  };
+});
+
+// ---------- rendering helpers ----------
+const gradeBadge = (g) => `<span class="badge ${g}">${g}</span>`;
+const genderLabel = (g) => (g === 'M' ? 'Male' : 'Female');
+
+const profPhoto = (p, cls = '') =>
+  p.photo
+    ? `<img class="pphoto ${cls}" src="${esc(p.photo)}" alt="${esc(p.name)}" />`
+    : `<div class="pphoto init ${cls}">${esc(initials(p.name))}</div>`;
+
+function projectItem(p, deletable = false) {
+  return `<div class="project-item">
+    ${deletable ? `<button class="btn small danger pdel" data-delproj="${p.id}" type="button">✕</button>` : ''}
+    <div class="ptitle">${esc(p.title)}</div>
+    ${p.description ? `<div class="pdesc">${esc(p.description)}</div>` : ''}
+    ${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener">🔗 ${esc(p.link)}</a>` : ''}
+  </div>`;
+}
+
+// member row with expandable project showcase + their own team note
+function memberRow(m, leaderSrn, note) {
+  const pid = 'proj_' + m.srn.replace(/[^A-Za-z0-9]/g, '');
+  return `<div class="member-block">
+    <div class="member">
+      ${m.srn === leaderSrn ? '<span class="crown" title="Team leader">👑</span>' : ''}
+      <strong>${esc(m.name)}</strong>
+      <span class="srn">${esc(m.srn)}</span>
+      ${gradeBadge(m.grade)}
+      <span class="badge gender">${genderLabel(m.gender)}</span>
+      ${m.github ? `<a class="gh-chip sm" href="${esc(m.github)}" target="_blank" rel="noopener">🐙 GitHub</a>` : ''}
+      ${m.projects.length ? `<button class="linklike" data-toggle="${pid}" type="button">📂 ${m.projects.length} project${m.projects.length === 1 ? '' : 's'}</button>` : ''}
+    </div>
+    ${note ? `<div class="member-note"><span class="who">What ${esc(m.name.split(' ')[0])} has worked on</span>${esc(note)}</div>` : ''}
+    ${m.projects.length ? `<div id="${pid}" class="projects hidden">${m.projects.map((p) => projectItem(p)).join('')}</div>` : ''}
+  </div>`;
+}
+
+function slotRow(s) {
+  const gradeBadges = ['A', 'B', 'C']
+    .map((g) => {
+      const open = s.openGrades.includes(g);
+      const needed = s.missing.includes(g);
+      return `<span class="badge ${open ? 'open' : 'closed'}" title="${open ? 'slot available' : 'not available'}">${g}${needed && open ? ' · needed' : ''}</span>`;
+    })
+    .join(' ');
+  return `
+    <div class="slot-row"><span class="lbl">Grade slots:</span> ${s.remaining === 0 ? '<span class="badge closed">team full</span>' : gradeBadges}</div>
+    <div class="slot-row"><span class="lbl">Gender slots:</span>
+      <span class="badge ${s.boysOpen ? 'open' : 'closed'}">Male ${s.boys}/3</span>
+      <span class="badge ${s.girlsOpen ? 'open' : 'closed'}">Female ${s.girls}/3</span>
+      <span class="lbl">· ${s.remaining} seat${s.remaining === 1 ? '' : 's'} left</span>
+    </div>`;
+}
+
+function mentorLine(t) {
+  if (t.mentor)
+    return `<div class="mentor-line">${profPhoto(t.mentor, 'sm')}
+      <span><span class="lbl">Mentor:</span> <strong>${esc(t.mentor.name)}</strong>
+      <span class="mentor-sub">· ${esc(t.mentor.title)}, ${esc(t.mentor.dept)}</span></span></div>`;
+  return `<div class="mentor-line"><span class="lbl">Mentor:</span> <span class="mentor-sub">not chosen yet</span></div>`;
+}
+
+function teamCardHead(t, right = '') {
+  return `<div class="team-head">
+    <div>
+      <div class="domain-title">${esc(t.domain)}</div>
+      <div class="team-meta">
+        <span class="badge branch">${esc(t.branch)}</span>
+        <span class="count">${t.members.length}/4 members${t.members.length === 4 ? ' · ✅ complete' : ''}</span>
+      </div>
+    </div>
+    ${right}
+  </div>`;
+}
+
+// ---------- main render ----------
+function render() {
+  $('authView').classList.add('hidden');
+  $('mainView').classList.remove('hidden');
+  $('meName').textContent = me.user.name;
+  $('meSub').textContent = `${me.user.srn} · ${me.user.branch}`;
+  $('meAvatar').textContent = initials(me.user.name);
+  $('meGrade').textContent = me.user.grade + ' grade';
+  $('meGrade').className = 'badge ' + me.user.grade;
+
+  document.querySelectorAll('.mtab').forEach((b) => b.classList.toggle('active', b.dataset.tab === activeTab));
+  const badge = $('reqBadge');
+  if (me.incoming.length > 0) {
+    badge.textContent = me.incoming.length;
+    badge.classList.remove('hidden');
+  } else badge.classList.add('hidden');
+
+  const views = { browse: browseHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml };
+  $('content').innerHTML = views[activeTab]();
+  bindActions();
+}
+
+// ---------- tab: browse teams ----------
+function browseHtml() {
+  const chips = ['ALL', ...BRANCHES]
+    .map((b) => `<button class="chip ${filters.branch === b ? 'active' : ''}" data-filter="${b}" type="button">${b === 'ALL' ? 'All branches' : b}</button>`)
+    .join('');
+
+  // domain options come from the teams that actually exist
+  const domainOpts = [...new Set(teams.map((t) => t.domain))].sort();
+  const anyFilter = filters.branch !== 'ALL' || filters.domain !== 'ALL' || filters.grade !== 'ALL' || filters.gender !== 'ALL';
+
+  const visible = teams.filter(
+    (t) =>
+      (filters.branch === 'ALL' || t.branch === filters.branch) &&
+      (filters.domain === 'ALL' || t.domain === filters.domain) &&
+      (filters.grade === 'ALL' || t.slots.openGrades.includes(filters.grade)) &&
+      (filters.gender === 'ALL' || (filters.gender === 'M' ? t.slots.boysOpen : t.slots.girlsOpen))
+  );
+
+  let html = `<div class="section-head fade-up">
+    <div><h2>Browse Teams</h2><p>Teams currently looking for members</p></div>
+    <div class="chips">${chips}</div>
+  </div>
+
+  <div class="card filter-bar fade-up">
+    <span class="lbl">Filters</span>
+    <select id="fDomain">
+      <option value="ALL">All domains</option>
+      ${domainOpts.map((d) => `<option value="${esc(d)}" ${filters.domain === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+    </select>
+    <select id="fGrade">
+      <option value="ALL">Any grade slot</option>
+      ${['A', 'B', 'C'].map((g) => `<option value="${g}" ${filters.grade === g ? 'selected' : ''}>${g}-grade slot open</option>`).join('')}
+    </select>
+    <select id="fGender">
+      <option value="ALL">Any gender slot</option>
+      <option value="M" ${filters.gender === 'M' ? 'selected' : ''}>Male can join</option>
+      <option value="F" ${filters.gender === 'F' ? 'selected' : ''}>Female can join</option>
+    </select>
+    ${anyFilter ? `<button id="clearFilters" class="btn small ghost" type="button">✕ Clear</button>` : ''}
+    <span class="count">${visible.length} of ${teams.length} team${teams.length === 1 ? '' : 's'}</span>
+  </div>`;
+
+  if (visible.length === 0) {
+    html += `<div class="card"><div class="empty"><span class="big">🧭</span>${
+      teams.length === 0
+        ? 'No teams here yet.<br/>Head to <strong>My Team</strong> and create the first one!'
+        : 'No team matches these filters.<br/>Try clearing some of them.'
+    }</div></div>`;
+    return html;
+  }
+  const sorted = [...visible].sort((a, b) => (b.slots.remaining > 0) - (a.slots.remaining > 0));
+  return (
+    html +
+    sorted
+      .map((t, i) => {
+        const joinable = !t.joinBlock && !t.requested;
+        return `<div class="card hoverable" style="animation-delay:${Math.min(i * 60, 400)}ms">
+        ${teamCardHead(
+          t,
+          `<button class="btn small primary" data-join="${t.id}" ${joinable ? '' : 'disabled'} type="button">
+            ${t.requested ? 'Request sent ✓' : 'Request to join'}
+          </button>`
+        )}
+        ${mentorLine(t)}
+        ${t.members.map((m) => memberRow(m, t.leader, t.memberNotes[m.srn])).join('')}
+        ${slotRow(t.slots)}
+        ${t.joinBlock && !t.requested ? `<p class="join-note">⚠️ ${esc(t.joinBlock)}</p>` : ''}
+      </div>`;
+      })
+      .join('')
+  );
+}
+
+// ---------- tab: my team ----------
+function myTeamTabHtml() {
+  if (!me.team) {
+    const options = DOMAINS.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    return `<div class="section-head fade-up"><div><h2>My Team</h2><p>You're not in a team yet — create one and lead it</p></div></div>
+    <div class="card">
+      <h2>Create a team</h2>
+      <p class="hint" style="margin-top:4px">Pick the project domain your team will work on. You become the team leader and approve who joins.</p>
+      <form id="createForm" class="create-grid">
+        <label>Project domain
+          <select id="domainSelect" required>
+            <option value="">Select a domain…</option>
+            ${options}
+            <option value="__custom__">Other (type your own)…</option>
+          </select>
+        </label>
+        <div id="customWrap" class="custom-domain-wrap">
+          <label>Custom domain <input id="customDomain" maxlength="60" placeholder="e.g. Quantum Computing" /></label>
+        </div>
+        <button class="btn primary" type="submit">Create team — you become leader</button>
+      </form>
+    </div>`;
+  }
+
+  const t = me.team;
+  const isLeader = t.leader === me.user.srn;
+  const myNote = t.memberNotes[me.user.srn] || '';
+
+  // mentor section
+  let mentorHtml = `<h3>Mentor</h3>`;
+  if (t.mentor) {
+    mentorHtml += `<div class="mentor-row">${profPhoto(t.mentor, 'lg')}
+      <div><div class="mentor-name">${esc(t.mentor.name)}</div>
+      <div class="mentor-sub">${esc(t.mentor.title)} · ${esc(t.mentor.dept)}</div></div>
+      ${isLeader ? `<button class="btn small danger" data-mentor-remove type="button">Remove</button>` : ''}
+    </div>`;
+  } else if (isLeader) {
+    const q = mentorQuery.toLowerCase();
+    const list = professors.filter((p) => !q || `${p.name} ${p.dept} ${p.title}`.toLowerCase().includes(q));
+    mentorHtml += `<p class="hint">No mentor yet — search a professor by name, or browse the list. You can also do this later.</p>
+      <input id="mentorSearch" placeholder="Type a professor's name…" value="${esc(mentorQuery)}" autocomplete="off" />
+      <div class="prof-list">${
+        list.length
+          ? list.map((p) => `<button class="prof-item" data-mentor="${esc(p.id)}" type="button">
+              ${profPhoto(p, 'lg')}
+              <span><span class="pi-name">${esc(p.name)}</span><br/><span class="pi-sub">${esc(p.title)} · ${esc(p.dept)}</span></span>
+            </button>`).join('')
+          : `<div class="empty">No professor matches “${esc(mentorQuery)}”</div>`
+      }</div>`;
+  } else {
+    mentorHtml += `<p class="hint">No mentor chosen yet — your team leader will pick one.</p>`;
+  }
+
+  return `<div class="section-head fade-up"><div><h2>My Team</h2><p>Your project team for 3rd &amp; 4th year</p></div></div>
+  <div class="card">
+    ${teamCardHead(t, `<button class="btn small danger" data-leave="${t.id}" type="button">${isLeader ? 'Disband team' : 'Leave team'}</button>`)}
+
+    ${mentorHtml}
+
+    <h3>Members</h3>
+    ${t.members.map((m) => memberRow(m, t.leader, t.memberNotes[m.srn])).join('')}
+
+    <h3>My description &amp; GitHub <span style="text-transform:none;letter-spacing:0">— only you can edit yours</span></h3>
+    <form id="noteForm">
+      <textarea id="noteInput" maxlength="400" placeholder="e.g. Built a chat app in React, done 2 ML hackathons, comfortable with Python and Figma…">${esc(myNote)}</textarea>
+      <div class="inline-form" style="margin-top:10px">
+        <input id="myGithub" placeholder="Your GitHub — https://github.com/yourname" value="${esc(me.user.github)}" />
+        <button class="btn small primary" type="submit">Save</button>
+      </div>
+    </form>
+
+    ${slotRow(t.slots)}
+    ${t.slots.remaining > 0 && isLeader ? `<p class="join-note">💡 Waiting on join requests? Check the <strong>Requests</strong> tab.</p>` : ''}
+  </div>`;
+}
+
+// ---------- tab: requests ----------
+function requestsHtml() {
+  let html = `<div class="section-head fade-up"><div><h2>Requests</h2><p>Join requests you've sent and received</p></div></div>`;
+
+  const isLeader = me.team && me.team.leader === me.user.srn;
+  if (isLeader) {
+    html += `<div class="card"><h2>Incoming — students who want to join</h2>`;
+    if (me.incoming.length === 0) {
+      html += `<div class="empty"><span class="big">📭</span>No pending requests.<br/>Tell your classmates to find your team under <strong>${esc(me.team.domain)}</strong>.</div>`;
+    } else {
+      html += me.incoming
+        .map(
+          (r) => `<div class="req-row">
+            <div style="flex:1">${memberRow(r.user, null)}</div>
+            <div class="req-actions">
+              <button class="btn small success" data-accept="${r.id}" type="button">Accept</button>
+              <button class="btn small danger" data-reject="${r.id}" type="button">Reject</button>
+            </div>
+          </div>`
+        )
+        .join('');
+    }
+    html += `</div>`;
+  }
+
+  html += `<div class="card"><h2>Sent by me</h2>`;
+  if (me.outgoing.length === 0) {
+    html += `<div class="empty"><span class="big">✉️</span>You haven't requested to join any team yet.</div>`;
+  } else {
+    const pending = me.outgoing.filter((r) => r.status === 'pending');
+    const decided = me.outgoing.filter((r) => r.status !== 'pending');
+    html += [...pending, ...decided]
+      .map(
+        (r) => `<div class="req-row"><span>${esc(r.teamDomain)}</span>
+          <span class="badge status-${r.status}">${r.status}</span></div>`
+      )
+      .join('');
+  }
+  html += `</div>`;
+  return html;
+}
+
+// ---------- tab: my profile ----------
+function profileHtml() {
+  const u = me.user;
+  let html = `<div class="section-head fade-up"><div><h2>My Profile</h2><p>Your showcase is visible to everyone browsing teams — help like-minded people find you</p></div></div>
+
+  <div class="card">
+    <h2>My details</h2>
+    <p class="hint" style="margin-top:4px">SRN can't be changed — it's your account ID.${me.team ? " Since you're in a team, changes that would break its grade/gender/branch rules will be rejected." : ''}</p>
+    <form id="editForm" class="create-grid">
+      <div class="row2">
+        <label>SRN <input value="${esc(u.srn)}" disabled /></label>
+        <label>Full name <input id="editName" required maxlength="60" value="${esc(u.name)}" /></label>
+      </div>
+      <div class="row2">
+        <label>Branch
+          <select id="editBranch" required>
+            ${BRANCHES.map((b) => `<option value="${b}" ${u.branch === b ? 'selected' : ''}>${b}</option>`).join('')}
+          </select>
+        </label>
+        <label>Gender
+          <select id="editGender" required>
+            <option value="M" ${u.gender === 'M' ? 'selected' : ''}>Male</option>
+            <option value="F" ${u.gender === 'F' ? 'selected' : ''}>Female</option>
+          </select>
+        </label>
+      </div>
+      <div class="row2">
+        <label>CGPA <input id="editCgpa" type="number" step="0.01" min="0" max="10" required value="${u.cgpa}" /></label>
+        <label>New password <input id="editPw" type="password" minlength="4" placeholder="Leave blank to keep current" /></label>
+      </div>
+      <button class="btn primary" type="submit">Save changes</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Project showcase</h2>
+    <p class="hint" style="margin-top:4px">Projects you've worked on — shown when people expand your name on team cards and join requests.</p>`;
+
+  if (u.projects.length === 0) {
+    html += `<div class="empty"><span class="big">📂</span>Nothing here yet — add your first project below.</div>`;
+  } else {
+    html += `<div class="projects" style="margin:10px 0 0">${u.projects.map((p) => projectItem(p, true)).join('')}</div>`;
+  }
+
+  html += `
+    <h3>Add a project</h3>
+    <form id="projForm" class="create-grid">
+      <label>Title <input id="projTitle" maxlength="60" required placeholder="e.g. Attendance app for my class" /></label>
+      <label>What you did <textarea id="projDesc" maxlength="300" placeholder="Short description — tech used, what you built…"></textarea></label>
+      <label>Link (optional) <input id="projLink" placeholder="https://github.com/you/repo" /></label>
+      <button class="btn primary" type="submit">Add to showcase</button>
+    </form>
+  </div>
+
+  <div class="card danger-zone">
+    <h2>Danger zone</h2>
+    <p class="hint" style="margin-top:6px">Deleting your account removes you from your team${me.team && me.team.leader === u.srn ? ' and <strong>disbands it</strong> (you are the leader)' : ''}, cancels your requests and erases your profile. This cannot be undone.</p>
+    <button id="deleteAccountBtn" class="btn danger" type="button">Delete my account</button>
+  </div>`;
+  return html;
+}
+
+// ---------- actions ----------
+function bindActions() {
+  document.querySelectorAll('[data-filter]').forEach((b) => {
+    b.onclick = () => { filters.branch = b.dataset.filter; render(); };
+  });
+  const bindSel = (id, key) => {
+    const el = $(id);
+    if (el) el.onchange = () => { filters[key] = el.value; render(); };
+  };
+  bindSel('fDomain', 'domain');
+  bindSel('fGrade', 'grade');
+  bindSel('fGender', 'gender');
+  const clearBtn = $('clearFilters');
+  if (clearBtn)
+    clearBtn.onclick = () => {
+      filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
+      render();
+    };
+
+  // expandable project showcases
+  document.querySelectorAll('[data-toggle]').forEach((b) => {
+    b.onclick = () => $(b.dataset.toggle).classList.toggle('hidden');
+  });
+
+  const createForm = $('createForm');
+  if (createForm) {
+    const sel = $('domainSelect');
+    sel.onchange = () => {
+      const custom = sel.value === '__custom__';
+      $('customWrap').classList.toggle('open', custom);
+      if (custom) $('customDomain').focus();
+    };
+    createForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const domain = sel.value === '__custom__' ? $('customDomain').value : sel.value;
+      if (!domain.trim()) return toast('Please enter your custom domain');
+      try {
+        await api('/teams', 'POST', { domain });
+        toast('Team created! You are the leader 👑', 'ok');
+        activeTab = 'team';
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+  }
+
+  // my own description + personal github
+  const noteForm = $('noteForm');
+  if (noteForm)
+    noteForm.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api(`/teams/${me.team.id}/note`, 'POST', { text: $('noteInput').value });
+        await api('/profile/github', 'POST', { url: $('myGithub').value });
+        toast('Saved — your description and GitHub are updated', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+
+  // mentor picker
+  const mentorSearch = $('mentorSearch');
+  if (mentorSearch)
+    mentorSearch.oninput = () => {
+      mentorQuery = mentorSearch.value;
+      render();
+      const el = $('mentorSearch');
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    };
+  document.querySelectorAll('[data-mentor]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/teams/${me.team.id}/mentor`, 'POST', { professorId: b.dataset.mentor });
+        mentorQuery = '';
+        toast('Mentor added to your team 🎓', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+  document.querySelectorAll('[data-mentor-remove]').forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm('Remove the mentor from your team?')) return;
+      try {
+        await api(`/teams/${me.team.id}/mentor`, 'POST', { professorId: null });
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+
+  // profile: edit my details
+  const editForm = $('editForm');
+  if (editForm)
+    editForm.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api('/profile', 'POST', {
+          name: $('editName').value,
+          branch: $('editBranch').value,
+          gender: $('editGender').value,
+          cgpa: $('editCgpa').value,
+          password: $('editPw').value,
+        });
+        toast('Your details are updated', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+
+  // profile: add / delete showcase projects
+  const projForm = $('projForm');
+  if (projForm)
+    projForm.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api('/profile/projects', 'POST', {
+          title: $('projTitle').value,
+          description: $('projDesc').value,
+          link: $('projLink').value,
+        });
+        toast('Project added to your showcase', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+  document.querySelectorAll('[data-delproj]').forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm('Remove this project from your showcase?')) return;
+      try { await api(`/profile/projects/${b.dataset.delproj}`, 'DELETE'); await refresh(); } catch (x) { toast(x.message); }
+    };
+  });
+
+  // delete account
+  const delBtn = $('deleteAccountBtn');
+  if (delBtn)
+    delBtn.onclick = async () => {
+      if (!confirm('Delete your account permanently? This cannot be undone.')) return;
+      if (!confirm('Are you really sure? Your team spot, requests and showcase will all be erased.')) return;
+      try {
+        await api('/account', 'DELETE');
+        toast('Account deleted. Bye 👋', 'ok');
+        logout();
+      } catch (x) { toast(x.message); }
+    };
+
+  document.querySelectorAll('[data-join]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/teams/${b.dataset.join}/join`, 'POST');
+        toast('Request sent — waiting for the leader to accept', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+  document.querySelectorAll('[data-accept]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/requests/${b.dataset.accept}`, 'POST', { action: 'accept' });
+        toast('Member added to the team 🎉', 'ok');
+      } catch (x) { toast(x.message); }
+      refresh();
+    };
+  });
+  document.querySelectorAll('[data-reject]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/requests/${b.dataset.reject}`, 'POST', { action: 'reject' });
+        refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+  document.querySelectorAll('[data-leave]').forEach((b) => {
+    b.onclick = async () => {
+      const isLeader = me.team.leader === me.user.srn;
+      if (!confirm(isLeader ? 'Disband the team? All members will be removed.' : 'Leave this team?')) return;
+      try { await api(`/teams/${b.dataset.leave}/leave`, 'POST'); refresh(); } catch (x) { toast(x.message); }
+    };
+  });
+}
+
+// ---------- refresh loop ----------
+async function refresh() {
+  if (!token) return showAuth();
+  try {
+    if (professors.length === 0) professors = await api('/professors').catch(() => []);
+    [me, teams] = await Promise.all([api('/me'), api('/teams')]);
+    // don't wipe the page while the user is typing in a form
+    const el = document.activeElement;
+    const typing = el && $('content').contains(el) && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
+    if (!typing) render();
+  } catch (e) {
+    if (token) toast(e.message);
+  }
+}
+
+refresh();
+setInterval(() => { if (token && me) refresh(); }, 10000);

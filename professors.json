@@ -1,0 +1,597 @@
+[
+  {
+    "id": "nm1692",
+    "name": "Divya Ebenezer Nathaniel",
+    "title": "Assistant Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061117998962_Divya_Ebenezer_Nathaniel.jpg"
+  },
+  {
+    "id": "nm1366",
+    "name": "Dr. Arti Arya",
+    "title": "Chairperson, Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113626192596_Arti_Arya.jpg"
+  },
+  {
+    "id": "nm1963",
+    "name": "Dr. Ashwini Kodipalli",
+    "title": "Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142857378959.jpg"
+  },
+  {
+    "id": "nm1521",
+    "name": "Dr. Divyaprabha K N",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220107071343000883.jpg"
+  },
+  {
+    "id": "nm1581",
+    "name": "Dr. Geetha D",
+    "title": "Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921060932209849_Dr._Geetha_D.jpg"
+  },
+  {
+    "id": "nm1580",
+    "name": "Dr. Kokila P",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220304122526000215.jpg"
+  },
+  {
+    "id": "nm1962",
+    "name": "Dr. M Shalima Sulthana",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142822173680.jpg"
+  },
+  {
+    "id": "nm1693",
+    "name": "Dr. Mannar Mannan",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921051007596197_Dr._Mannar_Mannan.jpg"
+  },
+  {
+    "id": "nm1968",
+    "name": "Dr. Praveenkumar S M",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410143200318715.jpg"
+  },
+  {
+    "id": "nm1810",
+    "name": "Dr. Richa Sharma",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104134411620925_staff041124.jpg"
+  },
+  {
+    "id": "nm1965",
+    "name": "Dr. SibaRam",
+    "title": "Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142954655007.jpg"
+  },
+  {
+    "id": "nm1763",
+    "name": "Dr. Suja C M",
+    "title": "Associate Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240417052047986138_Suja.jpg"
+  },
+  {
+    "id": "nm1966",
+    "name": "Dr. Vishnu Shankar Tiwari",
+    "title": "Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410143021699981.jpg"
+  },
+  {
+    "id": "nm1967",
+    "name": "R Thangamani",
+    "title": "Assistant Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410143133932480.jpg"
+  },
+  {
+    "id": "nm1964",
+    "name": "Remya Sivan",
+    "title": "Assistant Professor",
+    "dept": "AIML",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142923725803.jpg"
+  },
+  {
+    "id": "nm1922",
+    "name": "Ankita Singhai",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251022101811977025_ankitha_1.jpg"
+  },
+  {
+    "id": "nm1368",
+    "name": "Deepa S",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230925033325983162_deepa_s_1.jpg"
+  },
+  {
+    "id": "nm1381",
+    "name": "Deepti C",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120113925271_Deepti_C.jpg"
+  },
+  {
+    "id": "nm1380",
+    "name": "Dr. Animesh Giri",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062645765137_Animesh_Giri.jpg"
+  },
+  {
+    "id": "nm1538",
+    "name": "Dr. Chandrashekhar P Chavan",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921065504695350_Dr._Chandrashekhar_P_Chavan.jpg"
+  },
+  {
+    "id": "nm1759",
+    "name": "Dr. Farida Begam M",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240226084029459630_Dr_M_Farida_Begam_1.jpg"
+  },
+  {
+    "id": "nm1823",
+    "name": "Dr. Gamini Joshi",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251016102244341630_New_Project_1.jpg"
+  },
+  {
+    "id": "nm1539",
+    "name": "Dr. Gauri Sameer Rapate",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070542694208_Gauri_Sameer_Rapate.jpg"
+  },
+  {
+    "id": "nm1598",
+    "name": "Dr. Gokul Kannan Sadasivam",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220729081913000353.jpg"
+  },
+  {
+    "id": "nm1939",
+    "name": "Dr. Gokulakrishnan S",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131101772893_New_Project_1.jpg"
+  },
+  {
+    "id": "nm1516",
+    "name": "Dr. Kamatchi Priya L",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921063651137639_Dr._Kamatchi_Priya_L.jpg"
+  },
+  {
+    "id": "nm1849",
+    "name": "Dr. Kavitha P",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250310191720253369_Dr.KavithaP.jpg"
+  },
+  {
+    "id": "nm1821",
+    "name": "Dr. Manju",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250305125327976298_manju.jpg"
+  },
+  {
+    "id": "nm1822",
+    "name": "Dr. Monika Goyal",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250116144501694037_Monika_PES.jpg"
+  },
+  {
+    "id": "nm1603",
+    "name": "Dr. Nazmin Begum",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220816073651000224.jpg"
+  },
+  {
+    "id": "nm1367",
+    "name": "Dr. Pooja Agarwal",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920111907588323_Pooja_Agarwal.jpg"
+  },
+  {
+    "id": "nm1904",
+    "name": "Dr. Pradeep Kumar Kenny S",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": ""
+  },
+  {
+    "id": "nm1385",
+    "name": "Dr. Prajwala T R",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113010334328_Prajwala_T_R.jpg"
+  },
+  {
+    "id": "nm1514",
+    "name": "Dr. Prashanth Athri",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": ""
+  },
+  {
+    "id": "nm1632",
+    "name": "Dr. Prema R",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920083117101000_Prema_R.jpg"
+  },
+  {
+    "id": "nm1850",
+    "name": "Dr. R Nandhi Kesavan",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250311180213852108_Dr_R_Nandhi_Kesavan.jpg"
+  },
+  {
+    "id": "nm1364",
+    "name": "Dr. Sandesh B J",
+    "title": "Chairperson, Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210615110838000686.jpg"
+  },
+  {
+    "id": "nm1382",
+    "name": "Dr. Saritha",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113220821269_Saritha.jpg"
+  },
+  {
+    "id": "nm1809",
+    "name": "Dr. Sharavana K",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104132139605824_New_Project.jpg"
+  },
+  {
+    "id": "nm1377",
+    "name": "Dr. Sudeepa Roy Dey",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105128318892_Sudeepa_Roy_Dey.jpg"
+  },
+  {
+    "id": "nm1801",
+    "name": "Dr. Vaishali Shinde",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114527821970_New_Project_2.jpg"
+  },
+  {
+    "id": "nm1515",
+    "name": "Dr. Vinodha K",
+    "title": "Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113853300571_Vinodha_K.jpg"
+  },
+  {
+    "id": "nm1413",
+    "name": "Jeny Jijo",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919114118919410_Jeny_Jijo.jpg"
+  },
+  {
+    "id": "nm1764",
+    "name": "Lenish Pramiee",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240417052232914935_Lenish.jpg"
+  },
+  {
+    "id": "nm1800",
+    "name": "Nagalakshmi S R",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114241914089_New_Project_1.jpg"
+  },
+  {
+    "id": "nm1736",
+    "name": "Neha Sharma",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240117124515272352_Neha_Sharma.jpg"
+  },
+  {
+    "id": "nm1386",
+    "name": "Nivedita Kasturi",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919114854537739_Nivedita_Kasturi.jpg"
+  },
+  {
+    "id": "nm1737",
+    "name": "Pavithra S",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240119095639868016_Pavithra_S_1.jpg"
+  },
+  {
+    "id": "nm1689",
+    "name": "Pranjali Swapnil Thakre",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061312883603_Pranjali_Swapnil_Thakre.jpg"
+  },
+  {
+    "id": "nm1978",
+    "name": "Ramya Sri Chaganti",
+    "title": "Faculty Associate",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260609130026093192.jpg"
+  },
+  {
+    "id": "nm1519",
+    "name": "Ruby Dinakar J",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220803092054000560.jpg"
+  },
+  {
+    "id": "nm1941",
+    "name": "Senthil Anandhi Avanashilingam",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223132102050280_New_Project_2.jpg"
+  },
+  {
+    "id": "nm1523",
+    "name": "Sheela Devi M",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921081828614623_Sheela_Devi_M.jpg"
+  },
+  {
+    "id": "nm1390",
+    "name": "Shilpa S",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082603629580_Shilpa_S.jpg"
+  },
+  {
+    "id": "nm1537",
+    "name": "Shruthi L",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120015326284_Shruthi_L.jpg"
+  },
+  {
+    "id": "nm1940",
+    "name": "Sowmya A M",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131850161275_New_Project.jpg"
+  },
+  {
+    "id": "nm1788",
+    "name": "Swathi Priya N",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240807031747019295_New_Project.jpg"
+  },
+  {
+    "id": "nm1376",
+    "name": "Swati Pratap Jagdale",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105245511901_Swati_Pratap_Jagdale.jpg"
+  },
+  {
+    "id": "nm1709",
+    "name": "Swetha Patil",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920041834513423_23428a.jpg"
+  },
+  {
+    "id": "nm1851",
+    "name": "Uday Bhaskar",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": ""
+  },
+  {
+    "id": "nm1691",
+    "name": "Umme Haani",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230911064628250429_Umme.jpg"
+  },
+  {
+    "id": "nm1372",
+    "name": "Vandana M Ladwani",
+    "title": "Associate Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062435492394_Vandana_M_Ladwani.jpg"
+  },
+  {
+    "id": "nm1923",
+    "name": "Vanitha A N",
+    "title": "Assistant Professor",
+    "dept": "CSE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251022101921883189_vanitha_1.jpg"
+  },
+  {
+    "id": "nm1513",
+    "name": "Anudeep Seemalamudi Mallesh",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": ""
+  },
+  {
+    "id": "nm1432",
+    "name": "Bivas Bhattacharya",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061707290755_Renuka_R_Kajur_1.jpg"
+  },
+  {
+    "id": "nm1425",
+    "name": "Dhanashree G Bhate",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921063111950416_Dhanashree_G_Bhate.jpg"
+  },
+  {
+    "id": "nm1417",
+    "name": "Dr. Ajey S N R",
+    "title": "Chairperson, Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240219163215444002_profajey.jpg"
+  },
+  {
+    "id": "nm1435",
+    "name": "Dr. Ananda M",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210618145838000439.JPG"
+  },
+  {
+    "id": "nm1245",
+    "name": "Dr. Arpita Thakre",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210611045921000761.jpg"
+  },
+  {
+    "id": "nm1419",
+    "name": "Dr. B Sireesha",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082433123303_Dr._B_Sireesha.jpg"
+  },
+  {
+    "id": "nm1424",
+    "name": "Dr. Bajarangbali",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210616065718000732.jpg"
+  },
+  {
+    "id": "nm1428",
+    "name": "Dr. Chiranjeevi G N",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070220960794_Chiranjeevi_G_N.jpg"
+  },
+  {
+    "id": "nm1418",
+    "name": "Dr. Shashidhar Tantry",
+    "title": "Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230911081841340114_Shashidha.jpg"
+  },
+  {
+    "id": "nm1416",
+    "name": "Dr. Subhash Kulkarni",
+    "title": "Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919081432012250_Subhash_kulki.jpg"
+  },
+  {
+    "id": "nm1426",
+    "name": "Lokesh L",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070334493987_Lokesh_L.jpg"
+  },
+  {
+    "id": "nm1421",
+    "name": "Mahesh Awati",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082052208079_Mahesh_Awati.jpg"
+  },
+  {
+    "id": "nm1532",
+    "name": "Mamatha Shankar",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": ""
+  },
+  {
+    "id": "nm1427",
+    "name": "Muralidhar Shanbhag",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210621122538000665.jpg"
+  },
+  {
+    "id": "nm1517",
+    "name": "Nithyashree R V",
+    "title": "Ph.D. Scholar",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230927114206012534_Nithyashree_R_V.jpg"
+  },
+  {
+    "id": "nm1429",
+    "name": "Prahlad D",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921063250445510_Prahlad_D.jpg"
+  },
+  {
+    "id": "nm1433",
+    "name": "Rajesh C",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210616065526000438.jpg"
+  },
+  {
+    "id": "nm1434",
+    "name": "Renuka R Kajur",
+    "title": "Associate Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061442590110_Renuka_R_Kajur.jpg"
+  },
+  {
+    "id": "nm1438",
+    "name": "Sanket",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210621122836000502.jpg"
+  },
+  {
+    "id": "nm1430",
+    "name": "Shreyus Goutham Kumar",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919090237621955_Shreyus_Goutham_Kumar.jpg"
+  },
+  {
+    "id": "nm1436",
+    "name": "Vinay Reddy",
+    "title": "Assistant Professor",
+    "dept": "ECE",
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113804125571_Vinay_Reddy.jpg"
+  }
+]

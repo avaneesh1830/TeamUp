@@ -1,0 +1,4 @@
+node_modules/
+data.json
+nohup.out
+.DS_Store
