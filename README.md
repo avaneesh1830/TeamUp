@@ -103,6 +103,20 @@ npm start
 
 Open http://localhost:3000. Data lives in `data.json` (auto-created; delete to reset).
 
+## Run it with Docker
+
+The repo ships with a `Dockerfile`. From the project folder:
+
+```bash
+docker build -t teamup .
+docker run -d -p 3000:3000 -v teamup-data:/data --name teamup teamup
+```
+
+Open http://localhost:3000. The `-v teamup-data:/data` mounts a named volume so all
+accounts and teams survive `docker restart` and image rebuilds (the app writes its
+database to `DATA_DIR=/data` inside the container). To reset everything, remove the
+volume: `docker rm -f teamup && docker volume rm teamup-data`.
+
 ## Deployment
 
 > 🌐 **If deployed, the URL will be posted here.**
@@ -110,7 +124,9 @@ Open http://localhost:3000. Data lives in `data.json` (auto-created; delete to r
 Needs any host with a persistent disk (it writes `data.json`):
 
 - **College server / any Linux box:** `npm install && npm start`
-  (set `PORT` and optionally `DATA_DIR`)
+  (set `PORT` and optionally `DATA_DIR`), or run the Docker image above
+- **Docker anywhere:** the `Dockerfile` runs on any machine with Docker — just keep
+  the `/data` volume mounted so student data persists
 - **Railway:** deploy from this repo → add a volume mounted at `/data` →
   set env var `DATA_DIR=/data` → generate a domain
 - ⚠️ Serverless hosts (Vercel, Netlify) won't work as-is — no persistent filesystem
