@@ -117,6 +117,15 @@ accounts and teams survive `docker restart` and image rebuilds (the app writes i
 database to `DATA_DIR=/data` inside the container). To reset everything, remove the
 volume: `docker rm -f teamup && docker volume rm teamup-data`.
 
+### Pull from Docker Hub
+
+The image is published at [`avaneesharoor/teamup`](https://hub.docker.com/r/avaneesharoor/teamup).
+Any machine with Docker can run it without cloning the repo:
+
+```bash
+docker run -d -p 3000:3000 -v teamup-data:/data --name teamup avaneesharoor/teamup
+```
+
 ## Deployment
 
 > 🌐 **If deployed, the URL will be posted here.**
