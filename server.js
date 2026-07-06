@@ -187,7 +187,7 @@ app.get('/api/me', auth, (req, res) => {
     team && team.leader === me.srn
       ? db.requests
           .filter((r) => r.teamId === team.id && r.status === 'pending')
-          .map((r) => ({ id: r.id, user: publicUser(userBySrn(r.srn)) }))
+          .map((r) => ({ id: r.id, user: publicUser(userBySrn(r.srn)), whatsapp: r.whatsapp || '' }))
       : [];
   const outgoing = db.requests
     .filter((r) => r.srn === me.srn)
@@ -415,12 +415,38 @@ app.post('/api/teams/:id/join', auth, (req, res) => {
     (r) => r.teamId === team.id && r.srn === req.user.srn && r.status === 'pending'
   );
   if (dup) return res.status(400).json({ error: 'Request already sent' });
+  // optional WhatsApp number so the leader can chat before accepting
+  let wa = String(req.body.whatsapp || '').replace(/\D/g, '');
+  if (wa) {
+    if (wa.length === 10) wa = '91' + wa; // assume India if no country code
+    if (wa.length < 11 || wa.length > 15)
+      return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+  }
   db.requests.push({
     id: crypto.randomUUID(),
     teamId: team.id,
     srn: req.user.srn,
     status: 'pending',
+    whatsapp: wa,
   });
+  save();
+  res.json({ ok: true });
+});
+
+// leader removes a member; their team description goes with them
+app.post('/api/teams/:id/kick', auth, (req, res) => {
+  const team = db.teams.find((t) => t.id === req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (team.leader !== req.user.srn)
+    return res.status(403).json({ error: 'Only the team leader can remove members' });
+  const srn = String(req.body.srn || '').toUpperCase();
+  if (srn === team.leader)
+    return res.status(400).json({ error: 'The leader cannot remove themselves — disband the team instead' });
+  if (!team.members.includes(srn)) return res.status(404).json({ error: 'That student is not in your team' });
+  const member = userBySrn(srn);
+  team.members = team.members.filter((s) => s !== srn);
+  delete team.memberNotes[srn];
+  logEvent('member_removed', `${member.name} (${srn}) was removed from team "${team.domain}" by the leader`);
   save();
   res.json({ ok: true });
 });

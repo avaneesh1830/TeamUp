@@ -133,7 +133,7 @@ function projectItem(p, deletable = false) {
 }
 
 // member row with expandable project showcase + their own team note
-function memberRow(m, leaderSrn, note) {
+function memberRow(m, leaderSrn, note, extra = '') {
   const pid = 'proj_' + m.srn.replace(/[^A-Za-z0-9]/g, '');
   return `<div class="member-block">
     <div class="member">
@@ -144,6 +144,7 @@ function memberRow(m, leaderSrn, note) {
       <span class="badge gender">${genderLabel(m.gender)}</span>
       ${m.github ? `<a class="gh-chip sm" href="${esc(m.github)}" target="_blank" rel="noopener">🐙 GitHub</a>` : ''}
       ${m.projects.length ? `<button class="linklike" data-toggle="${pid}" type="button">📂 ${m.projects.length} project${m.projects.length === 1 ? '' : 's'}</button>` : ''}
+      ${extra}
     </div>
     ${note ? `<div class="member-note"><span class="who">What ${esc(m.name.split(' ')[0])} has worked on</span>${esc(note)}</div>` : ''}
     ${m.projects.length ? `<div id="${pid}" class="projects hidden">${m.projects.map((p) => projectItem(p)).join('')}</div>` : ''}
@@ -264,6 +265,7 @@ function browseHtml() {
   const sorted = [...visible].sort((a, b) => (b.slots.remaining > 0) - (a.slots.remaining > 0));
   return (
     html +
+    `<div class="team-grid">` +
     sorted
       .map((t, i) => {
         const joinable = !t.joinBlock && !t.requested;
@@ -280,7 +282,8 @@ function browseHtml() {
         ${t.joinBlock && !t.requested ? `<p class="join-note">⚠️ ${esc(t.joinBlock)}</p>` : ''}
       </div>`;
       })
-      .join('')
+      .join('') +
+    `</div>`
   );
 }
 
@@ -350,13 +353,7 @@ async function searchStudents() {
     });
     // join-their-team buttons
     $('studentResults').querySelectorAll('[data-joinsteam]').forEach((b) => {
-      b.onclick = async () => {
-        try {
-          await api(`/teams/${b.dataset.joinsteam}/join`, 'POST');
-          toast('Request sent — waiting for the leader to accept', 'ok');
-          searchStudents();
-        } catch (x) { toast(x.message); }
-      };
+      b.onclick = () => openJoinModal(b.dataset.joinsteam, true);
     });
   } catch (x) { toast(x.message); }
 }
@@ -421,7 +418,18 @@ function myTeamTabHtml() {
     ${mentorHtml}
 
     <h3>Members</h3>
-    ${t.members.map((m) => memberRow(m, t.leader, t.memberNotes[m.srn])).join('')}
+    ${t.members
+      .map((m) =>
+        memberRow(
+          m,
+          t.leader,
+          t.memberNotes[m.srn],
+          isLeader && m.srn !== me.user.srn
+            ? `<button class="btn small danger" data-kick="${esc(m.srn)}" type="button">Remove</button>`
+            : ''
+        )
+      )
+      .join('')}
 
     <h3>My description &amp; GitHub <span style="text-transform:none;letter-spacing:0">— only you can edit yours</span></h3>
     <form id="noteForm">
@@ -452,6 +460,7 @@ function requestsHtml() {
           (r) => `<div class="req-row">
             <div style="flex:1">${memberRow(r.user, null)}</div>
             <div class="req-actions">
+              ${r.whatsapp ? `<a class="wa-chip" href="https://wa.me/${esc(r.whatsapp)}" target="_blank" rel="noopener" title="+${esc(r.whatsapp)}">💬 WhatsApp</a>` : ''}
               <button class="btn small success" data-accept="${r.id}" type="button">Accept</button>
               <button class="btn small danger" data-reject="${r.id}" type="button">Reject</button>
             </div>
@@ -692,11 +701,17 @@ function bindActions() {
     };
 
   document.querySelectorAll('[data-join]').forEach((b) => {
+    b.onclick = () => openJoinModal(b.dataset.join, false);
+  });
+
+  // leader removes a member
+  document.querySelectorAll('[data-kick]').forEach((b) => {
     b.onclick = async () => {
+      if (!confirm(`Remove ${b.dataset.kick} from the team? Their description will be removed too.`)) return;
       try {
-        await api(`/teams/${b.dataset.join}/join`, 'POST');
-        toast('Request sent — waiting for the leader to accept', 'ok');
-        await refresh();
+        await api(`/teams/${me.team.id}/kick`, 'POST', { srn: b.dataset.kick });
+        toast('Member removed from the team', 'ok');
+        refresh();
       } catch (x) { toast(x.message); }
     };
   });
@@ -725,6 +740,51 @@ function bindActions() {
     };
   });
 }
+
+// ---------- join request modal (with optional WhatsApp) ----------
+let pendingJoin = null; // { teamId, fromStudents }
+
+function openJoinModal(teamId, fromStudents) {
+  pendingJoin = { teamId, fromStudents };
+  $('waInput').value = localStorage.getItem('wa') || '';
+  $('joinModal').classList.remove('hidden');
+  $('waInput').focus();
+}
+function closeJoinModal() {
+  pendingJoin = null;
+  $('joinModal').classList.add('hidden');
+}
+$('waCancel').onclick = closeJoinModal;
+$('joinModal').onclick = (e) => { if (e.target.id === 'joinModal') closeJoinModal(); };
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeJoinModal(); });
+$('waSend').onclick = async () => {
+  if (!pendingJoin) return;
+  const wa = $('waInput').value.trim();
+  const { teamId, fromStudents } = pendingJoin;
+  try {
+    await api(`/teams/${teamId}/join`, 'POST', { whatsapp: wa });
+    if (wa) localStorage.setItem('wa', wa); // remember for next time
+    closeJoinModal();
+    toast('Request sent — waiting for the leader to accept', 'ok');
+    await refresh();
+    if (fromStudents) searchStudents();
+  } catch (x) { toast(x.message); }
+};
+
+// ---------- material ripple on buttons / tabs / chips ----------
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('.btn, .mtab, .tab, .chip, .prof-item');
+  if (!el || el.disabled) return;
+  const r = el.getBoundingClientRect();
+  const d = Math.max(r.width, r.height) * 1.1;
+  const s = document.createElement('span');
+  s.className = 'ripple';
+  s.style.width = s.style.height = d + 'px';
+  s.style.left = e.clientX - r.left - d / 2 + 'px';
+  s.style.top = e.clientY - r.top - d / 2 + 'px';
+  el.appendChild(s);
+  setTimeout(() => s.remove(), 600);
+});
 
 // ---------- refresh loop ----------
 async function refresh() {
