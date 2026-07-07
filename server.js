@@ -408,6 +408,8 @@ app.post('/api/teams/:id/note', auth, (req, res) => {
 app.post('/api/teams/:id/join', auth, (req, res) => {
   const team = db.teams.find((t) => t.id === req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (team.members.includes(req.user.srn))
+    return res.status(400).json({ error: "This is your own team — you can't request to join it" });
   if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
   const block = joinBlock(team, req.user);
   if (block) return res.status(400).json({ error: block });

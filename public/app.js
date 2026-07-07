@@ -268,18 +268,21 @@ function browseHtml() {
     `<div class="team-grid">` +
     sorted
       .map((t, i) => {
-        const joinable = !t.joinBlock && !t.requested;
+        const isMyTeam = me.team && me.team.id === t.id;
+        const joinable = !isMyTeam && !t.joinBlock && !t.requested;
         return `<div class="card hoverable" style="animation-delay:${Math.min(i * 60, 400)}ms">
         ${teamCardHead(
           t,
-          `<button class="btn small primary" data-join="${t.id}" ${joinable ? '' : 'disabled'} type="button">
+          isMyTeam
+            ? `<span class="badge branch">⭐ Your team</span>`
+            : `<button class="btn small primary" data-join="${t.id}" ${joinable ? '' : 'disabled'} type="button">
             ${t.requested ? 'Request sent ✓' : 'Request to join'}
           </button>`
         )}
         ${mentorLine(t)}
         ${t.members.map((m) => memberRow(m, t.leader, t.memberNotes[m.srn])).join('')}
         ${slotRow(t.slots)}
-        ${t.joinBlock && !t.requested ? `<p class="join-note">⚠️ ${esc(t.joinBlock)}</p>` : ''}
+        ${!isMyTeam && t.joinBlock && !t.requested ? `<p class="join-note">⚠️ ${esc(t.joinBlock)}</p>` : ''}
       </div>`;
       })
       .join('') +
