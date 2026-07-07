@@ -2,24 +2,24 @@
 
 /* ============ Material Design tokens ============ */
 :root {
-  /* color — Material 3 baseline, bold primary */
-  --primary: #6750a4;
-  --primary-dark: #4f378b;
+  /* color — Material 3, nature-green primary to match the forest backdrop */
+  --primary: #386a20;
+  --primary-dark: #2b5217;
   --on-primary: #ffffff;
-  --primary-container: #eaddff;
-  --on-primary-container: #21005d;
-  --secondary-container: #e8def8;
-  --on-secondary-container: #1d192b;
-  --tertiary-container: #ffd8e4;
-  --surface: #fef7ff;
-  --surface-bright: #fffbfe;
-  --surface-1: #f7f2fa;
-  --surface-2: #f3edf7;
-  --surface-3: #eee8f4;
-  --on-surface: #1d1b20;
-  --on-surface-variant: #49454f;
-  --outline: #79747e;
-  --outline-variant: #cac4d0;
+  --primary-container: #d5f2c2;
+  --on-primary-container: #072100;
+  --secondary-container: #e0e9d6;
+  --on-secondary-container: #1a1c16;
+  --tertiary-container: #bcebeb;
+  --surface: #f6faf0;
+  --surface-bright: #fdfdf6;
+  --surface-1: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(243, 247, 236, 0.9);
+  --surface-3: rgba(233, 239, 226, 0.95);
+  --on-surface: #1a1c18;
+  --on-surface-variant: #44483e;
+  --outline: #75796c;
+  --outline-variant: #c5c8ba;
   --error: #b3261e;
   --error-container: #f9dedc;
   --on-error-container: #410e0b;
@@ -42,10 +42,30 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: "Roboto", -apple-system, "Segoe UI", sans-serif;
-  background: var(--surface);
+  /* green gradient fallback while the video loads (or if it can't) */
+  background: linear-gradient(160deg, #dfeCd4 0%, #f3f7ec 55%, #d8e8d8 100%);
   color: var(--on-surface);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ============ nature video backdrop ============ */
+.bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -2;
+}
+.bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(250, 253, 246, 0.45) 0%, rgba(248, 252, 244, 0.60) 60%, rgba(244, 250, 240, 0.72) 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-video { display: none; }
 }
 
 .hidden { display: none !important; }
@@ -83,8 +103,8 @@ footer .campus-tag { margin-top: 8px; }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(103, 80, 164, 0.45); }
-  50% { box-shadow: 0 0 0 6px rgba(103, 80, 164, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 106, 32, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(56, 106, 32, 0); }
 }
 @keyframes rippleAnim {
   to { transform: scale(2.4); opacity: 0; }
@@ -131,13 +151,12 @@ footer .campus-tag { margin-top: 8px; }
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background:
-    radial-gradient(1100px 550px at 85% -10%, var(--primary-container) 0%, transparent 55%),
-    radial-gradient(900px 500px at -10% 110%, var(--secondary-container) 0%, transparent 50%),
-    var(--surface);
 }
 .auth-card {
-  background: var(--surface-bright);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 28px; /* Material large shape */
   padding: 36px;
   width: 100%;
@@ -243,8 +262,11 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  background: var(--surface-1);
-  box-shadow: var(--e2);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--e1);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -272,10 +294,15 @@ header {
 .main-tabs {
   display: flex;
   gap: 4px;
-  max-width: 980px;
+  max-width: 940px;
   margin: 18px auto 0;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--outline-variant);
+  padding: 4px 8px 0;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: var(--e1);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -327,11 +354,23 @@ header {
 }
 
 main { max-width: 980px; margin: 0 auto; padding: 22px 20px 60px; }
-footer { text-align: center; color: var(--on-surface-variant); font-size: 0.78rem; padding: 24px; }
+footer { text-align: center; font-size: 0.78rem; padding: 24px; }
+footer p:first-child {
+  display: inline-block;
+  color: var(--on-surface-variant);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 7px 16px;
+  border-radius: 999px;
+}
 
 /* ============ cards (Material elevated) ============ */
 .card {
-  background: var(--surface-bright);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 16px; /* Material medium shape */
   padding: 22px;
   margin-bottom: 16px;
@@ -715,4 +754,11 @@ footer { text-align: center; color: var(--on-surface-variant); font-size: 0.78re
   .btn { min-height: 44px; }
   .btn.small { min-height: 40px; }
   .chip { padding: 9px 16px; }
+
+  /* lighter glass on phones — heavy blur is expensive on mobile GPUs */
+  .card, .auth-card, header, .main-tabs {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
 }

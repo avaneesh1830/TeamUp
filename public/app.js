@@ -771,6 +771,10 @@ $('waSend').onclick = async () => {
   } catch (x) { toast(x.message); }
 };
 
+// ---------- background video: fall back to the gradient if it can't load ----------
+const bgVideo = $('bgVideo');
+if (bgVideo) bgVideo.addEventListener('error', () => bgVideo.remove(), true);
+
 // ---------- material ripple on buttons / tabs / chips ----------
 document.addEventListener('pointerdown', (e) => {
   const el = e.target.closest('.btn, .mtab, .tab, .chip, .prof-item');
