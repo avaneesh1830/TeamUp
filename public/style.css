@@ -610,6 +610,7 @@ footer p:first-child {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .wa-chip:hover { transform: translateY(-1px); box-shadow: var(--e2); }
+.wa-chip.sm { padding: 4px 11px; font-size: 0.72rem; font-weight: 600; }
 
 .inline-form { display: flex; gap: 8px; }
 .inline-form input, .inline-form textarea { flex: 1; margin-top: 0; }

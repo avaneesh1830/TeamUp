@@ -86,6 +86,7 @@ $('registerForm').onsubmit = async (e) => {
       branch: $('regBranch').value,
       gender: $('regGender').value,
       cgpa: $('regCgpa').value,
+      whatsapp: $('regWa').value,
       password: $('regPw').value,
     });
     setToken(r.token);
@@ -202,8 +203,9 @@ function render() {
 
   document.querySelectorAll('.mtab').forEach((b) => b.classList.toggle('active', b.dataset.tab === activeTab));
   const badge = $('reqBadge');
-  if (me.incoming.length > 0) {
-    badge.textContent = me.incoming.length;
+  const actionable = me.incoming.length + me.invites.filter((i) => i.status === 'pending').length;
+  if (actionable > 0) {
+    badge.textContent = actionable;
     badge.classList.remove('hidden');
   } else badge.classList.add('hidden');
 
@@ -294,7 +296,7 @@ function browseHtml() {
 // ---------- tab: students (full directory, alphabetical) ----------
 function studentsHtml() {
   return `<div class="section-head fade-up">
-    <div><h2>Students</h2><p>Everyone who has registered, A→Z — filter to find your ideal teammate</p></div>
+    <div><h2>Students</h2><p>Students still looking for a team, A→Z — search by name to find anyone (even in teams)</p></div>
   </div>
   <div class="card filter-bar fade-up">
     <span class="lbl">Filters</span>
@@ -340,15 +342,21 @@ function studentResultsHtml(list) {
         status = `<span class="badge free">Available — can join a team</span>`;
       }
       let eligible = '';
-      if (s.eligibleForMyTeam === null)
-        eligible = `<p class="join-note" style="background:var(--green-bg);color:var(--green-ink)">✅ Eligible for your team — ask them to send a request!</p>`;
+      if (s.invited)
+        eligible = `<button class="btn small primary" disabled type="button">Invited ✓</button>`;
+      else if (s.eligibleForMyTeam === null)
+        eligible = `<button class="btn small success" data-invite="${esc(s.srn)}" type="button">➕ Invite to my team</button>`;
       else if (typeof s.eligibleForMyTeam === 'string')
-        eligible = `<p class="join-note">⚠️ Can't join your team: ${esc(s.eligibleForMyTeam)}</p>`;
+        eligible = `<p class="join-note">⚠️ Can't invite: ${esc(s.eligibleForMyTeam)}</p>`;
       const interests = s.domains && s.domains.length
         ? `<div class="interest-row">🎯 ${s.domains.map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>`
         : '';
+      const waChip = s.whatsapp
+        ? `<a class="wa-chip sm" href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">💬 +${esc(s.whatsapp)}</a>`
+        : `<span class="srn" style="font-size:0.75rem">no number shared</span>`;
       return `<div class="student-row">
         <div style="flex:1">${memberRow(s, null)}${interests}</div>
+        ${waChip}
         <div>${status}</div>
         ${joinBtn}
         ${eligible}
@@ -379,6 +387,16 @@ async function searchStudents() {
     // join-their-team buttons
     $('studentResults').querySelectorAll('[data-joinsteam]').forEach((b) => {
       b.onclick = () => openJoinModal(b.dataset.joinsteam, true);
+    });
+    // leader invites a student to their team
+    $('studentResults').querySelectorAll('[data-invite]').forEach((b) => {
+      b.onclick = async () => {
+        try {
+          await api(`/teams/${me.team.id}/invite`, 'POST', { srn: b.dataset.invite });
+          toast(`Invitation sent to ${b.dataset.invite} 📨`, 'ok');
+          searchStudents();
+        } catch (x) { toast(x.message); }
+      };
     });
   } catch (x) { toast(x.message); }
 }
@@ -472,9 +490,44 @@ function myTeamTabHtml() {
 
 // ---------- tab: requests ----------
 function requestsHtml() {
-  let html = `<div class="section-head fade-up"><div><h2>Requests</h2><p>Join requests you've sent and received</p></div></div>`;
+  let html = `<div class="section-head fade-up"><div><h2>Requests</h2><p>Join requests and team invitations</p></div></div>`;
 
   const isLeader = me.team && me.team.leader === me.user.srn;
+
+  // invitations sent TO me by team leaders
+  const pendingInv = me.invites.filter((i) => i.status === 'pending');
+  const decidedInv = me.invites.filter((i) => i.status !== 'pending');
+  if (me.invites.length > 0) {
+    html += `<div class="card"><h2>Invitations — teams that want you 🎉</h2>`;
+    html += [...pendingInv, ...decidedInv]
+      .map((i) =>
+        i.status === 'pending'
+          ? `<div class="req-row">
+              <span><strong>${esc(i.teamDomain)}</strong> <span class="badge branch">${esc(i.teamBranch)}</span>
+              <span class="srn"> · led by ${esc(i.leaderName)}</span></span>
+              <div class="req-actions">
+                <button class="btn small success" data-inv-accept="${i.id}" type="button">Accept &amp; join</button>
+                <button class="btn small danger" data-inv-reject="${i.id}" type="button">Decline</button>
+              </div>
+            </div>`
+          : `<div class="req-row"><span>${esc(i.teamDomain)}<span class="srn"> · led by ${esc(i.leaderName)}</span></span>
+              <span class="badge status-${i.status}">${i.status}</span></div>`
+      )
+      .join('');
+    html += `</div>`;
+  }
+
+  // invitations I sent as leader
+  if (isLeader && me.sentInvites.length > 0) {
+    html += `<div class="card"><h2>Invites I've sent</h2>
+      ${me.sentInvites
+        .map(
+          (i) => `<div class="req-row"><span>${esc(i.name)} <span class="srn">${esc(i.srn)}</span></span>
+            <span class="badge status-${i.status}">${i.status}</span></div>`
+        )
+        .join('')}
+    </div>`;
+  }
   if (isLeader) {
     html += `<div class="card"><h2>Incoming — students who want to join</h2>`;
     if (me.incoming.length === 0) {
@@ -541,8 +594,9 @@ function profileHtml() {
       </div>
       <div class="row2">
         <label>CGPA <input id="editCgpa" type="number" step="0.01" min="0" max="10" required value="${u.cgpa}" /></label>
-        <label>New password <input id="editPw" type="password" minlength="4" placeholder="Leave blank to keep current" /></label>
+        <label>WhatsApp number <input id="editWa" inputmode="tel" maxlength="16" value="${esc(u.whatsapp)}" placeholder="Shown to classmates" /></label>
       </div>
+      <label>New password <input id="editPw" type="password" minlength="4" placeholder="Leave blank to keep current" /></label>
       <button class="btn primary" type="submit">Save changes</button>
     </form>
   </div>
@@ -716,6 +770,7 @@ function bindActions() {
           branch: $('editBranch').value,
           gender: $('editGender').value,
           cgpa: $('editCgpa').value,
+          whatsapp: $('editWa').value,
           password: $('editPw').value,
         });
         toast('Your details are updated', 'ok');
@@ -790,6 +845,25 @@ function bindActions() {
       } catch (x) { toast(x.message); }
     };
   });
+  // student accepts / declines a team invitation
+  document.querySelectorAll('[data-inv-accept]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/invites/${b.dataset.invAccept}`, 'POST', { action: 'accept' });
+        toast('Welcome to the team! 🎉', 'ok');
+        activeTab = 'team';
+      } catch (x) { toast(x.message); }
+      refresh();
+    };
+  });
+  document.querySelectorAll('[data-inv-reject]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/invites/${b.dataset.invReject}`, 'POST', { action: 'reject' });
+        refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
   document.querySelectorAll('[data-leave]').forEach((b) => {
     b.onclick = async () => {
       const isLeader = me.team.leader === me.user.srn;
@@ -804,7 +878,7 @@ let pendingJoin = null; // { teamId, fromStudents }
 
 function openJoinModal(teamId, fromStudents) {
   pendingJoin = { teamId, fromStudents };
-  $('waInput').value = localStorage.getItem('wa') || '';
+  $('waInput').value = (me && me.user.whatsapp) || localStorage.getItem('wa') || '';
   $('joinModal').classList.remove('hidden');
   $('waInput').focus();
 }
@@ -849,6 +923,7 @@ document.addEventListener('pointerdown', (e) => {
 });
 
 // ---------- refresh loop ----------
+let lastSnapshot = ''; // skip re-rendering when nothing changed (fixes scroll jumping to top)
 async function refresh() {
   if (!token) return showAuth();
   try {
@@ -857,7 +932,14 @@ async function refresh() {
     // don't wipe the page while the user is typing in a form
     const el = document.activeElement;
     const typing = el && $('content').contains(el) && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
-    if (!typing) render();
+    if (typing) return;
+    // only re-render if the data actually changed — otherwise leave the page (and scroll) alone
+    const snap = JSON.stringify([me, teams]);
+    if (snap === lastSnapshot) return;
+    lastSnapshot = snap;
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y); // keep the user where they were
   } catch (e) {
     if (token) toast(e.message);
   }

@@ -21,12 +21,14 @@ db.users.forEach((u) => {
   if (!u.projects) u.projects = [];
   if (u.github === undefined) u.github = '';
   if (!u.domains) u.domains = []; // domains they're interested in working on
+  if (u.whatsapp === undefined) u.whatsapp = '';
 });
 db.teams.forEach((t) => {
   if (!t.memberNotes) t.memberNotes = {};
   if (t.mentor === undefined) t.mentor = null;
 });
 if (!db.log) db.log = [];
+if (!db.invites) db.invites = []; // leader -> student invitations
 
 // atomic write: never leaves a half-written data.json even if the process dies mid-save
 const save = () => {
@@ -69,6 +71,14 @@ const gradeOf = (cgpa) => (cgpa >= 8 ? 'A' : cgpa >= 7 ? 'B' : 'C');
 const teamOf = (srn) => db.teams.find((t) => t.members.includes(srn));
 const userBySrn = (srn) => db.users.find((u) => u.srn === srn);
 const isHttp = (s) => /^https?:\/\/\S+$/i.test(s);
+// normalize a WhatsApp number: '' if empty, null if invalid, else digits with country code
+function normWa(x) {
+  let wa = String(x || '').replace(/\D/g, '');
+  if (!wa) return '';
+  if (wa.length === 10) wa = '91' + wa; // assume India if no country code
+  if (wa.length < 11 || wa.length > 15) return null;
+  return wa;
+}
 
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
@@ -128,6 +138,7 @@ const publicUser = (u) => ({
   projects: u.projects || [],
   github: u.github || '',
   domains: u.domains || [],
+  whatsapp: u.whatsapp || '',
 });
 
 function teamView(team, viewer) {
@@ -165,6 +176,8 @@ app.post('/api/register', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 4 characters' });
   const id = srn.trim().toUpperCase();
   if (userBySrn(id)) return res.status(400).json({ error: 'This SRN is already registered' });
+  const wa = normWa(req.body.whatsapp);
+  if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
   const salt = crypto.randomBytes(8).toString('hex');
   const user = {
     srn: id,
@@ -175,6 +188,7 @@ app.post('/api/register', (req, res) => {
     projects: [],
     github: '',
     domains: [],
+    whatsapp: wa,
     salt,
     pwHash: hashPw(password, salt),
     token: crypto.randomUUID(),
@@ -211,11 +225,37 @@ app.get('/api/me', auth, (req, res) => {
       const t = db.teams.find((x) => x.id === r.teamId);
       return { id: r.id, teamDomain: t ? t.domain : '(deleted team)', status: r.status };
     });
+  // invitations sent TO me by team leaders
+  const invites = db.invites
+    .filter((i) => i.srn === me.srn)
+    .map((i) => {
+      const t = db.teams.find((x) => x.id === i.teamId);
+      const leader = t && userBySrn(t.leader);
+      return {
+        id: i.id,
+        status: i.status,
+        teamDomain: t ? t.domain : '(disbanded team)',
+        teamBranch: t ? t.branch : '',
+        leaderName: leader ? leader.name : '',
+      };
+    });
+  // invitations I have sent as a leader
+  const sentInvites =
+    team && team.leader === me.srn
+      ? db.invites
+          .filter((i) => i.teamId === team.id)
+          .map((i) => {
+            const u = userBySrn(i.srn);
+            return { id: i.id, srn: i.srn, name: u ? u.name : i.srn, status: i.status };
+          })
+      : [];
   res.json({
     user: { ...publicUser(me), cgpa: me.cgpa },
     team: team ? teamView(team, me) : null,
     incoming,
     outgoing,
+    invites,
+    sentInvites,
   });
 });
 
@@ -251,10 +291,14 @@ app.post('/api/profile', auth, (req, res) => {
       });
   }
 
+  const wa = normWa(req.body.whatsapp);
+  if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+
   req.user.name = name.trim();
   req.user.gender = gender;
   req.user.branch = branch;
   req.user.cgpa = c;
+  req.user.whatsapp = wa;
   if (password) {
     req.user.salt = crypto.randomBytes(8).toString('hex');
     req.user.pwHash = hashPw(password, req.user.salt);
@@ -313,6 +357,9 @@ app.delete('/api/account', auth, (req, res) => {
       db.requests.forEach((r) => {
         if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
       });
+      db.invites.forEach((i) => {
+        if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
+      });
       logEvent('team_disbanded', `Team "${team.domain}" disbanded (leader ${srn} deleted account)`);
     } else {
       team.members = team.members.filter((s) => s !== srn);
@@ -321,6 +368,7 @@ app.delete('/api/account', auth, (req, res) => {
     }
   }
   db.requests = db.requests.filter((r) => r.srn !== srn);
+  db.invites = db.invites.filter((i) => i.srn !== srn);
   db.users = db.users.filter((u) => u.srn !== srn);
   logEvent('account_deleted', `${req.user.name} (${srn}) deleted their account`);
   save();
@@ -339,7 +387,8 @@ app.get('/api/students', auth, (req, res) => {
   const myTeam = teamOf(req.user.srn);
   const amLeader = myTeam && myTeam.leader === req.user.srn;
   const results = db.users
-    .filter((u) => !q || u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q))
+    // no search text => directory of students still LOOKING for a team; searching shows everyone
+    .filter((u) => (q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn)))
     .filter((u) => !gender || u.gender === gender)
     .filter((u) => !grade || gradeOf(u.cgpa) === grade)
     .filter((u) => !domain || (u.domains || []).includes(domain))
@@ -349,7 +398,10 @@ app.get('/api/students', auth, (req, res) => {
       const t = teamOf(u.srn);
       const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
       // if the searcher leads a team with open seats, say whether this student could join it
-      if (amLeader && !t && u.srn !== req.user.srn) out.eligibleForMyTeam = joinBlock(myTeam, u);
+      if (amLeader && !t && u.srn !== req.user.srn) {
+        out.eligibleForMyTeam = joinBlock(myTeam, u);
+        out.invited = !!db.invites.find((i) => i.teamId === myTeam.id && i.srn === u.srn && i.status === 'pending');
+      }
       // if the student is in a team, say whether the searcher could join that team
       if (t && !t.members.includes(req.user.srn)) {
         out.team.joinBlock = myTeam ? 'Already in a team' : joinBlock(t, req.user);
@@ -449,12 +501,9 @@ app.post('/api/teams/:id/join', auth, (req, res) => {
   );
   if (dup) return res.status(400).json({ error: 'Request already sent' });
   // optional WhatsApp number so the leader can chat before accepting
-  let wa = String(req.body.whatsapp || '').replace(/\D/g, '');
-  if (wa) {
-    if (wa.length === 10) wa = '91' + wa; // assume India if no country code
-    if (wa.length < 11 || wa.length > 15)
-      return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
-  }
+  const wa = normWa(req.body.whatsapp);
+  if (wa === null)
+    return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
   db.requests.push({
     id: crypto.randomUUID(),
     teamId: team.id,
@@ -462,6 +511,59 @@ app.post('/api/teams/:id/join', auth, (req, res) => {
     status: 'pending',
     whatsapp: wa,
   });
+  save();
+  res.json({ ok: true });
+});
+
+// leader invites a student to their team (branch + grade + gender rules enforced)
+app.post('/api/teams/:id/invite', auth, (req, res) => {
+  const team = db.teams.find((t) => t.id === req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (team.leader !== req.user.srn)
+    return res.status(403).json({ error: 'Only the team leader can invite students' });
+  const cand = userBySrn(String(req.body.srn || '').toUpperCase());
+  if (!cand) return res.status(404).json({ error: 'Student not found' });
+  if (cand.srn === req.user.srn) return res.status(400).json({ error: "You can't invite yourself" });
+  if (teamOf(cand.srn)) return res.status(400).json({ error: 'This student is already in a team' });
+  const block = joinBlock(team, cand); // same branch / grade slot / gender slot checks
+  if (block) return res.status(400).json({ error: block });
+  const dup = db.invites.find((i) => i.teamId === team.id && i.srn === cand.srn && i.status === 'pending');
+  if (dup) return res.status(400).json({ error: 'Already invited — waiting for their reply' });
+  db.invites.push({ id: crypto.randomUUID(), teamId: team.id, srn: cand.srn, status: 'pending' });
+  logEvent('invite_sent', `${req.user.name} (${req.user.srn}) invited ${cand.name} (${cand.srn}) to team "${team.domain}"`);
+  save();
+  res.json({ ok: true });
+});
+
+// invited student accepts / rejects an invitation
+app.post('/api/invites/:id', auth, (req, res) => {
+  const inv = db.invites.find((x) => x.id === req.params.id);
+  if (!inv || inv.status !== 'pending') return res.status(404).json({ error: 'Invitation not found' });
+  if (inv.srn !== req.user.srn) return res.status(403).json({ error: 'This invitation is not for you' });
+
+  if (req.body.action === 'reject') {
+    inv.status = 'rejected';
+    save();
+    return res.json({ ok: true });
+  }
+
+  const team = db.teams.find((t) => t.id === inv.teamId);
+  if (!team) { inv.status = 'cancelled'; save(); return res.status(400).json({ error: 'That team no longer exists' }); }
+  if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
+  const block = joinBlock(team, req.user);
+  if (block) return res.status(400).json({ error: `Cannot join: ${block}` });
+
+  team.members.push(req.user.srn);
+  inv.status = 'accepted';
+  logEvent('member_joined', `${req.user.name} (${req.user.srn}) joined team "${team.domain}" (accepted invitation)${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
+  // cancel their other pending invites + join requests
+  db.invites.forEach((x) => { if (x.srn === req.user.srn && x.status === 'pending') x.status = 'cancelled'; });
+  db.requests.forEach((x) => { if (x.srn === req.user.srn && x.status === 'pending') x.status = 'cancelled'; });
+  // if team is now full, close the remaining queue
+  if (team.members.length === TEAM_SIZE) {
+    db.requests.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected'; });
+    db.invites.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled'; });
+  }
   save();
   res.json({ ok: true });
 });
@@ -511,14 +613,20 @@ app.post('/api/requests/:id', auth, (req, res) => {
   team.members.push(candidate.srn);
   r.status = 'accepted';
   logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domain}"${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
-  // cancel the candidate's other pending requests
+  // cancel the candidate's other pending requests and invites
   db.requests.forEach((x) => {
+    if (x.srn === candidate.srn && x.status === 'pending') x.status = 'cancelled';
+  });
+  db.invites.forEach((x) => {
     if (x.srn === candidate.srn && x.status === 'pending') x.status = 'cancelled';
   });
   // if team is now full, reject everyone else who was waiting
   if (team.members.length === TEAM_SIZE) {
     db.requests.forEach((x) => {
       if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected';
+    });
+    db.invites.forEach((x) => {
+      if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled';
     });
   }
   save();
@@ -534,6 +642,9 @@ app.post('/api/teams/:id/leave', auth, (req, res) => {
     db.teams = db.teams.filter((t) => t.id !== team.id);
     db.requests.forEach((r) => {
       if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
+    });
+    db.invites.forEach((i) => {
+      if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
     });
     logEvent('team_disbanded', `${req.user.name} (${req.user.srn}) disbanded team "${team.domain}"`);
   } else {
