@@ -147,24 +147,61 @@ function projectItem(p, deletable = false) {
   </div>`;
 }
 
-// member row with expandable project showcase + their own team note
-function memberRow(m, leaderSrn, note, extra = '') {
-  const pid = 'proj_' + m.srn.replace(/[^A-Za-z0-9]/g, '');
+// member row — click the name to open their full profile
+const profileCache = {}; // srn -> latest publicUser we've rendered
+function memberRow(m, leaderSrn, extra = '') {
+  profileCache[m.srn] = m;
   return `<div class="member-block">
     <div class="member">
       ${m.srn === leaderSrn ? '<span class="crown" title="Team leader">👑</span>' : ''}
-      <strong>${esc(m.name)}</strong>
+      <button class="plink" data-profile="${esc(m.srn)}" type="button"><strong>${esc(m.name)}</strong></button>
       <span class="srn">${esc(m.srn)}</span>
+      <span class="badge branch">${esc(m.branch)}</span>
       ${gradeBadge(m.grade)}
       <span class="badge gender">${genderLabel(m.gender)}</span>
       ${m.github ? `<a class="gh-chip sm" href="${esc(m.github)}" target="_blank" rel="noopener">🐙 GitHub</a>` : ''}
-      ${m.projects.length ? `<button class="linklike" data-toggle="${pid}" type="button">📂 ${m.projects.length} project${m.projects.length === 1 ? '' : 's'}</button>` : ''}
       ${extra}
     </div>
-    ${note ? `<div class="member-note"><span class="who">What ${esc(m.name.split(' ')[0])} has worked on</span>${esc(note)}</div>` : ''}
-    ${m.projects.length ? `<div id="${pid}" class="projects hidden">${m.projects.map((p) => projectItem(p)).join('')}</div>` : ''}
   </div>`;
 }
+
+// full profile dialog — opened by clicking any student's name
+function showProfile(srn) {
+  const m = profileCache[srn];
+  if (!m) return;
+  const t = teams.find((x) => x.members.some((mm) => mm.srn === srn));
+  $('profileCard').innerHTML = `
+    <div class="profile-head">
+      <div class="avatar">${esc(initials(m.name))}</div>
+      <div>
+        <h2>${esc(m.name)}</h2>
+        <span class="srn">${esc(m.srn)}</span>
+      </div>
+    </div>
+    <div class="slot-row" style="margin:12px 0">
+      <span class="badge branch">${esc(m.branch)}</span>
+      ${gradeBadge(m.grade)}
+      <span class="badge gender">${genderLabel(m.gender)}</span>
+      ${t ? `<span class="badge taken">In team · ${esc(t.domains.join(' / '))}</span>` : '<span class="badge free">Looking for a team</span>'}
+    </div>
+    <div class="slot-row" style="margin-bottom:12px">
+      ${m.whatsapp ? `<a class="wa-chip sm" href="https://wa.me/${esc(m.whatsapp)}" target="_blank" rel="noopener">💬 +${esc(m.whatsapp)}</a>` : ''}
+      ${m.github ? `<a class="gh-chip sm" href="${esc(m.github)}" target="_blank" rel="noopener">🐙 GitHub</a>` : ''}
+    </div>
+    ${m.domains.length ? `<h3>Interested domains</h3><div class="slot-row">${m.domains.map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>` : ''}
+    ${m.bio ? `<h3>What they've worked on</h3><p class="bio-text">${esc(m.bio)}</p>` : ''}
+    ${m.projects.length ? `<h3>Project showcase</h3><div class="projects" style="margin:0">${m.projects.map((p) => projectItem(p)).join('')}</div>` : ''}
+    ${!m.bio && !m.projects.length && !m.domains.length ? '<p class="hint" style="margin-top:12px">No bio, interests or projects added yet.</p>' : ''}
+    <div class="modal-actions"><button class="btn ghost" id="profileClose" type="button">Close</button></div>`;
+  $('profileModal').classList.remove('hidden');
+  $('profileClose').onclick = () => $('profileModal').classList.add('hidden');
+}
+// one global handler covers every clickable name, even in re-rendered lists
+document.addEventListener('click', (e) => {
+  const p = e.target.closest('[data-profile]');
+  if (p) showProfile(p.dataset.profile);
+  if (e.target.id === 'profileModal') $('profileModal').classList.add('hidden');
+});
 
 function slotRow(s) {
   const gradeBadges = ['A', 'B', 'C']
@@ -194,14 +231,15 @@ function mentorLine(t) {
 function teamCardHead(t, right = '') {
   return `<div class="team-head">
     <div>
-      <div class="domain-title">${esc(t.domain)}</div>
+      <div class="domain-title">${esc(t.domains.join(' · '))}</div>
       <div class="team-meta">
         <span class="badge branch">${esc(t.branch)}</span>
         <span class="count">${t.members.length}/4 members${t.members.length === 4 ? ' · ✅ complete' : ''}</span>
       </div>
     </div>
     ${right}
-  </div>`;
+  </div>
+  ${t.description ? `<p class="team-desc">${esc(t.description)}</p>` : ''}`;
 }
 
 // ---------- main render ----------
@@ -235,13 +273,13 @@ function browseHtml() {
     .join('');
 
   // domain options come from the teams that actually exist
-  const domainOpts = [...new Set(teams.map((t) => t.domain))].sort();
+  const domainOpts = [...new Set(teams.flatMap((t) => t.domains))].sort();
   const anyFilter = filters.branch !== 'ALL' || filters.domain !== 'ALL' || filters.grade !== 'ALL' || filters.gender !== 'ALL';
 
   const visible = teams.filter(
     (t) =>
       (filters.branch === 'ALL' || t.branch === filters.branch) &&
-      (filters.domain === 'ALL' || t.domain === filters.domain) &&
+      (filters.domain === 'ALL' || t.domains.includes(filters.domain)) &&
       (filters.grade === 'ALL' || t.slots.openGrades.includes(filters.grade)) &&
       (filters.gender === 'ALL' || (filters.gender === 'M' ? t.slots.boysOpen : t.slots.girlsOpen))
   );
@@ -296,7 +334,7 @@ function browseHtml() {
           </button>`
         )}
         ${mentorLine(t)}
-        ${t.members.map((m) => memberRow(m, t.leader, t.memberNotes[m.srn])).join('')}
+        ${t.members.map((m) => memberRow(m, t.leader)).join('')}
         ${slotRow(t.slots)}
         ${!isMyTeam && t.joinBlock && !t.requested ? `<p class="join-note">⚠️ ${esc(t.joinBlock)}</p>` : ''}
       </div>`;
@@ -400,10 +438,6 @@ async function searchStudents() {
     const counter = $('studentCount');
     if (counter) counter.textContent = `${list.length} student${list.length === 1 ? '' : 's'}`;
     $('studentResults').innerHTML = studentResultsHtml(list);
-    // re-bind the "📂 n projects" toggles inside results
-    $('studentResults').querySelectorAll('[data-toggle]').forEach((b) => {
-      b.onclick = () => $(b.dataset.toggle).classList.toggle('hidden');
-    });
     // join-their-team buttons
     $('studentResults').querySelectorAll('[data-joinsteam]').forEach((b) => {
       b.onclick = () => openJoinModal(b.dataset.joinsteam, true);
@@ -424,27 +458,19 @@ async function searchStudents() {
 // ---------- tab: my team ----------
 function myTeamTabHtml() {
   if (!me.team) {
-    const options = DOMAINS.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
     return `<div class="section-head fade-up"><div><h2>My Team</h2><p>You're not in a team yet — create one and lead it</p></div></div>
     <div class="card">
       <h2>Create a team</h2>
-      <p class="hint" style="margin-top:4px">Pick the project domain your team will work on (from the official list). You become the team leader.</p>
-      <form id="createForm" class="create-grid">
-        <label>Project domain
-          <select id="domainSelect" required>
-            <option value="">Select a domain…</option>
-            ${options}
-          </select>
-        </label>
-        <button class="btn primary" type="submit">Create team — you become leader</button>
-      </form>
+      <p class="hint" style="margin-top:4px">Pick 1–3 project domains from the list (tap to select). You become the team leader.</p>
+      <div class="chips" id="teamDomainChips" style="margin:6px 0 16px">
+        ${DOMAINS.map((d) => `<button class="chip tdomain" data-tdomain="${esc(d)}" type="button">${esc(d)}</button>`).join('')}
+      </div>
+      <button id="createTeamBtn" class="btn primary" type="button">Create team — you become leader</button>
     </div>`;
   }
 
   const t = me.team;
   const isLeader = t.leader === me.user.srn;
-  const myNote = t.memberNotes[me.user.srn] || '';
-
   // mentor section
   let mentorHtml = `<h3>Mentor</h3>`;
   if (t.mentor) {
@@ -476,13 +502,12 @@ function myTeamTabHtml() {
 
     ${mentorHtml}
 
-    <h3>Members</h3>
+    <h3>Members <span style="text-transform:none;letter-spacing:0">— click a name to see their profile</span></h3>
     ${t.members
       .map((m) =>
         memberRow(
           m,
           t.leader,
-          t.memberNotes[m.srn],
           isLeader && m.srn !== me.user.srn
             ? `<button class="btn small danger" data-kick="${esc(m.srn)}" type="button">Remove</button>`
             : ''
@@ -490,14 +515,15 @@ function myTeamTabHtml() {
       )
       .join('')}
 
-    <h3>My description &amp; GitHub <span style="text-transform:none;letter-spacing:0">— only you can edit yours</span></h3>
-    <form id="noteForm">
-      <textarea id="noteInput" maxlength="400" placeholder="e.g. Built a chat app in React, done 2 ML hackathons, comfortable with Python and Figma…">${esc(myNote)}</textarea>
-      <div class="inline-form" style="margin-top:10px">
-        <input id="myGithub" placeholder="Your GitHub — https://github.com/yourname" value="${esc(me.user.github)}" />
-        <button class="btn small primary" type="submit">Save</button>
-      </div>
-    </form>
+    ${
+      isLeader
+        ? `<h3>Team description <span style="text-transform:none;letter-spacing:0">— written by you, shown on your team's card</span></h3>
+          <form id="teamDescForm">
+            <textarea id="teamDescInput" maxlength="500" placeholder="What your team is planning to build, the tech you'll use, what kind of teammate you're looking for…">${esc(t.description)}</textarea>
+            <div class="inline-form" style="margin-top:10px"><button class="btn small primary" type="submit">Save description</button></div>
+          </form>`
+        : ''
+    }
 
     ${slotRow(t.slots)}
     ${t.slots.remaining > 0 ? `<p class="join-note">💡 Any member can accept requests or invite students — check the <strong>Requests</strong> and <strong>Students</strong> tabs.</p>` : ''}
@@ -627,6 +653,18 @@ function profileHtml() {
   </div>
 
   <div class="card">
+    <h2>About me</h2>
+    <p class="hint" style="margin-top:4px">Shown when anyone clicks your name anywhere on the site — your pitch to potential teammates.</p>
+    <form id="aboutForm">
+      <label>What I've worked on
+        <textarea id="bioInput" maxlength="400" placeholder="e.g. Built a chat app in React, done 2 ML hackathons, comfortable with Python and Figma…">${esc(u.bio)}</textarea>
+      </label>
+      <label>My GitHub <input id="myGithub" placeholder="https://github.com/yourname" value="${esc(u.github)}" /></label>
+      <button class="btn primary" type="submit">Save</button>
+    </form>
+  </div>
+
+  <div class="card">
     <h2>Interested domains</h2>
     <p class="hint" style="margin-top:4px">Pick from the list — these show on your directory entry so teams working on what you love can find you. (Custom domains are only for naming a team you create.)</p>
     <div class="chips" style="margin:6px 0 14px">
@@ -722,35 +760,47 @@ function bindActions() {
       render();
     };
 
-  // expandable project showcases
-  document.querySelectorAll('[data-toggle]').forEach((b) => {
-    b.onclick = () => $(b.dataset.toggle).classList.toggle('hidden');
+  // create team: multi-select domain chips (max 3)
+  document.querySelectorAll('[data-tdomain]').forEach((b) => {
+    b.onclick = () => {
+      if (!b.classList.contains('active') && document.querySelectorAll('.chip.tdomain.active').length >= 3)
+        return toast('Pick at most 3 domains');
+      b.classList.toggle('active');
+    };
   });
-
-  const createForm = $('createForm');
-  if (createForm) {
-    createForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const domain = $('domainSelect').value;
-      if (!domain) return toast('Please pick a domain from the list');
+  const createBtn = $('createTeamBtn');
+  if (createBtn)
+    createBtn.onclick = async () => {
+      const domains = [...document.querySelectorAll('.chip.tdomain.active')].map((b) => b.dataset.tdomain);
+      if (domains.length === 0) return toast('Pick at least one domain from the list');
       try {
-        await api('/teams', 'POST', { domain });
+        await api('/teams', 'POST', { domains });
         toast('Team created! You are the leader 👑', 'ok');
         activeTab = 'team';
         await refresh();
       } catch (x) { toast(x.message); }
     };
-  }
 
-  // my own description + personal github
-  const noteForm = $('noteForm');
-  if (noteForm)
-    noteForm.onsubmit = async (e) => {
+  // leader writes the team description
+  const teamDescForm = $('teamDescForm');
+  if (teamDescForm)
+    teamDescForm.onsubmit = async (e) => {
       e.preventDefault();
       try {
-        await api(`/teams/${me.team.id}/note`, 'POST', { text: $('noteInput').value });
-        await api('/profile/github', 'POST', { url: $('myGithub').value });
-        toast('Saved — your description and GitHub are updated', 'ok');
+        await api(`/teams/${me.team.id}/description`, 'POST', { text: $('teamDescInput').value });
+        toast('Team description saved', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
+
+  // profile: bio + personal github
+  const aboutForm = $('aboutForm');
+  if (aboutForm)
+    aboutForm.onsubmit = async (e) => {
+      e.preventDefault();
+      try {
+        await api('/profile/about', 'POST', { bio: $('bioInput').value, github: $('myGithub').value });
+        toast('Saved — your profile is updated', 'ok');
         await refresh();
       } catch (x) { toast(x.message); }
     };

@@ -505,16 +505,44 @@ footer p:first-child {
 
 .member-block { border-bottom: 1px solid var(--outline-variant); }
 .member-block:last-of-type { border-bottom: none; }
-.member-note {
-  font-size: 0.84rem;
+
+/* clickable student names -> profile dialog */
+.plink {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline transparent;
+  transition: text-decoration-color 0.2s ease;
+}
+.plink:hover { text-decoration-color: var(--primary); }
+
+.team-desc {
+  font-size: 0.86rem;
+  color: var(--on-surface-variant);
   background: var(--surface-2);
   border-left: 3px solid var(--primary);
   border-radius: 0 8px 8px 0;
   padding: 9px 12px;
-  margin: 0 0 10px 24px;
-  line-height: 1.5;
+  margin-top: 10px;
+  line-height: 1.55;
 }
-.member-note .who { color: var(--primary); font-weight: 700; font-size: 0.72rem; display: block; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.profile-head { display: flex; align-items: center; gap: 14px; }
+.profile-head .avatar { width: 52px; height: 52px; font-size: 1.05rem; }
+.bio-text { font-size: 0.9rem; line-height: 1.6; }
+#profileCard { max-height: 85vh; overflow-y: auto; }
+#profileCard h3 {
+  font-size: 0.74rem;
+  margin: 14px 0 6px;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
 
 .linklike {
   border: none;
@@ -576,8 +604,6 @@ footer p:first-child {
 .empty .big { font-size: 2rem; display: block; margin-bottom: 6px; }
 
 .create-grid { display: grid; gap: 4px; }
-.custom-domain-wrap { overflow: hidden; max-height: 0; transition: max-height 0.35s ease; }
-.custom-domain-wrap.open { max-height: 100px; }
 
 /* github + whatsapp chips */
 .gh-chip {

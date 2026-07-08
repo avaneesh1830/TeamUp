@@ -22,10 +22,22 @@ db.users.forEach((u) => {
   if (u.github === undefined) u.github = '';
   if (!u.domains) u.domains = []; // domains they're interested in working on
   if (u.whatsapp === undefined) u.whatsapp = '';
+  if (u.bio === undefined) u.bio = ''; // personal "what I've worked on"
 });
 db.teams.forEach((t) => {
-  if (!t.memberNotes) t.memberNotes = {};
   if (t.mentor === undefined) t.mentor = null;
+  if (t.description === undefined) t.description = '';
+  // teams now have multiple domains
+  if (t.domain && !t.domains) { t.domains = [t.domain]; delete t.domain; }
+  if (!t.domains) t.domains = [];
+  // old per-team member notes become the member's personal bio
+  if (t.memberNotes) {
+    for (const [srn, note] of Object.entries(t.memberNotes)) {
+      const u = db.users.find((x) => x.srn === srn);
+      if (u && !u.bio && note) u.bio = note;
+    }
+    delete t.memberNotes;
+  }
 });
 if (!db.log) db.log = [];
 if (!db.invites) db.invites = []; // leader -> student invitations
@@ -131,7 +143,7 @@ function slotInfo(team) {
 // null if user can join, otherwise a reason string
 function joinBlock(team, user) {
   if (user.branch !== team.branch)
-    return `Only ${team.branch} students can join this team (you are ${user.branch})`;
+    return `Only ${team.branch} students can join this team`;
   const s = slotInfo(team);
   if (s.remaining === 0) return 'Team is full';
   const g = gradeOf(user.cgpa);
@@ -152,6 +164,7 @@ const publicUser = (u) => ({
   github: u.github || '',
   domains: u.domains || [],
   whatsapp: u.whatsapp || '',
+  bio: u.bio || '',
 });
 
 function teamView(team, viewer) {
@@ -163,10 +176,10 @@ function teamView(team, viewer) {
     );
   return {
     id: team.id,
-    domain: team.domain,
+    domains: team.domains,
+    description: team.description || '',
     branch: team.branch,
     leader: team.leader,
-    memberNotes: team.memberNotes || {},
     mentor: team.mentor ? professors.find((p) => p.id === team.mentor) || null : null,
     members: team.members.map((srn) => publicUser(userBySrn(srn))),
     slots: s,
@@ -237,7 +250,7 @@ app.get('/api/me', auth, (req, res) => {
             user: publicUser(userBySrn(r.srn)),
             whatsapp: r.whatsapp || '',
             // heads-up for the team: this requester has since joined another team
-            candidateTeam: candTeam ? candTeam.domain : null,
+            candidateTeam: candTeam ? candTeam.domains.join(' / ') : null,
           };
         })
     : [];
@@ -245,7 +258,7 @@ app.get('/api/me', auth, (req, res) => {
     .filter((r) => r.srn === me.srn)
     .map((r) => {
       const t = db.teams.find((x) => x.id === r.teamId);
-      return { id: r.id, teamDomain: t ? t.domain : '(deleted team)', status: r.status };
+      return { id: r.id, teamDomain: t ? t.domains.join(' / ') : '(deleted team)', status: r.status };
     });
   // invitations sent TO me by team leaders
   const invites = db.invites
@@ -256,7 +269,7 @@ app.get('/api/me', auth, (req, res) => {
       return {
         id: i.id,
         status: i.status,
-        teamDomain: t ? t.domain : '(disbanded team)',
+        teamDomain: t ? t.domains.join(' / ') : '(disbanded team)',
         teamBranch: t ? t.branch : '',
         leaderName: leader ? leader.name : '',
       };
@@ -381,11 +394,10 @@ app.delete('/api/account', auth, (req, res) => {
       db.invites.forEach((i) => {
         if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
       });
-      logEvent('team_disbanded', `Team "${team.domain}" disbanded (leader ${srn} deleted account)`);
+      logEvent('team_disbanded', `Team "${team.domains.join(', ')}" disbanded (leader ${srn} deleted account)`);
     } else {
       team.members = team.members.filter((s) => s !== srn);
-      delete team.memberNotes[srn];
-      logEvent('member_left', `${req.user.name} (${srn}) left team "${team.domain}" (account deleted)`);
+      logEvent('member_left', `${req.user.name} (${srn}) left team "${team.domains.join(', ')}" (account deleted)`);
     }
   }
   db.requests = db.requests.filter((r) => r.srn !== srn);
@@ -426,7 +438,7 @@ app.get('/api/students', auth, (req, res) => {
     .slice(0, 500)
     .map((u) => {
       const t = teamOf(u.srn);
-      const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
+      const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domains.join(' / '), branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
       // if the searcher's team has open seats, say whether this student could join it
       if (canInvite && !t && u.srn !== req.user.srn) {
         out.eligibleForMyTeam = joinBlock(myTeam, u);
@@ -455,30 +467,49 @@ app.get('/api/teams', auth, (req, res) => {
 });
 
 app.post('/api/teams', auth, (req, res) => {
-  const { domain } = req.body;
-  // domain must come from the official list — no custom team domains
-  if (!DOMAINS.includes(domain))
-    return res.status(400).json({ error: 'Pick a project domain from the list' });
+  // one or more domains, all from the official list — no custom team domains
+  const domains = [...new Set(req.body.domains || [])];
+  if (!Array.isArray(domains) || domains.length === 0)
+    return res.status(400).json({ error: 'Pick at least one project domain from the list' });
+  if (domains.length > 3) return res.status(400).json({ error: 'Pick at most 3 domains' });
+  const invalid = domains.filter((d) => !DOMAINS.includes(d));
+  if (invalid.length) return res.status(400).json({ error: `Not in the domain list: ${invalid.join(', ')}` });
   if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
   const team = {
     id: crypto.randomUUID(),
-    domain,
+    domains,
+    description: '',
     branch: req.user.branch, // team belongs to the leader's branch
     leader: req.user.srn,
     members: [req.user.srn],
-    memberNotes: {},
     mentor: null,
   };
   db.teams.push(team);
-  logEvent('team_created', `${req.user.name} (${req.user.srn}) created team "${team.domain}" [${team.branch}]`);
+  logEvent('team_created', `${req.user.name} (${req.user.srn}) created team "${domains.join(', ')}" [${team.branch}]`);
   save();
   res.json(teamView(team, req.user));
 });
 
-// each member sets their own personal GitHub link ('' clears it)
-app.post('/api/profile/github', auth, (req, res) => {
-  const url = (req.body.url || '').trim();
+// team description — leader only
+app.post('/api/teams/:id/description', auth, (req, res) => {
+  const team = db.teams.find((t) => t.id === req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (team.leader !== req.user.srn)
+    return res.status(403).json({ error: 'Only the team leader can write the team description' });
+  const text = (req.body.text || '').trim();
+  if (text.length > 500) return res.status(400).json({ error: 'Description too long (max 500 chars)' });
+  team.description = text;
+  save();
+  res.json({ ok: true });
+});
+
+// my personal bio + GitHub — lives on the profile, shown when people open it
+app.post('/api/profile/about', auth, (req, res) => {
+  const bio = (req.body.bio || '').trim();
+  if (bio.length > 400) return res.status(400).json({ error: 'Bio too long (max 400 chars)' });
+  const url = (req.body.github || '').trim();
   if (url && !isHttp(url)) return res.status(400).json({ error: 'Link must start with http:// or https://' });
+  req.user.bio = bio;
   req.user.github = url;
   save();
   res.json({ ok: true });
@@ -498,19 +529,6 @@ app.post('/api/teams/:id/mentor', auth, (req, res) => {
     if (!prof) return res.status(404).json({ error: 'Professor not found' });
     team.mentor = prof.id;
   }
-  save();
-  res.json({ ok: true });
-});
-
-// each member writes THEIR OWN description — nobody can edit anyone else's
-app.post('/api/teams/:id/note', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
-  if (!team) return res.status(404).json({ error: 'Team not found' });
-  if (!team.members.includes(req.user.srn))
-    return res.status(403).json({ error: 'Only team members can write a description' });
-  const text = (req.body.text || '').trim();
-  if (text.length > 400) return res.status(400).json({ error: 'Description too long (max 400 chars)' });
-  team.memberNotes[req.user.srn] = text; // keyed by the caller's own SRN
   save();
   res.json({ ok: true });
 });
@@ -557,7 +575,7 @@ app.post('/api/teams/:id/invite', auth, (req, res) => {
   const dup = db.invites.find((i) => i.teamId === team.id && i.srn === cand.srn && i.status === 'pending');
   if (dup) return res.status(400).json({ error: 'Already invited — waiting for their reply' });
   db.invites.push({ id: crypto.randomUUID(), teamId: team.id, srn: cand.srn, status: 'pending' });
-  logEvent('invite_sent', `${req.user.name} (${req.user.srn}) invited ${cand.name} (${cand.srn}) to team "${team.domain}"`);
+  logEvent('invite_sent', `${req.user.name} (${req.user.srn}) invited ${cand.name} (${cand.srn}) to team "${team.domains.join(', ')}"`);
   save();
   res.json({ ok: true });
 });
@@ -593,7 +611,7 @@ app.post('/api/invites/:id', auth, (req, res) => {
 
   team.members.push(req.user.srn);
   inv.status = 'accepted';
-  logEvent('member_joined', `${req.user.name} (${req.user.srn}) joined team "${team.domain}" (accepted invitation)${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
+  logEvent('member_joined', `${req.user.name} (${req.user.srn}) joined team "${team.domains.join(', ')}" (accepted invitation)${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
   // NOTE: their other pending invites/requests stay alive on purpose
   // if team is now full, close this team's remaining queue
   if (team.members.length === TEAM_SIZE) {
@@ -616,8 +634,7 @@ app.post('/api/teams/:id/kick', auth, (req, res) => {
   if (!team.members.includes(srn)) return res.status(404).json({ error: 'That student is not in your team' });
   const member = userBySrn(srn);
   team.members = team.members.filter((s) => s !== srn);
-  delete team.memberNotes[srn];
-  logEvent('member_removed', `${member.name} (${srn}) was removed from team "${team.domain}" by the leader`);
+  logEvent('member_removed', `${member.name} (${srn}) was removed from team "${team.domains.join(', ')}" by the leader`);
   save();
   res.json({ ok: true });
 });
@@ -655,7 +672,7 @@ app.post('/api/requests/:id', auth, (req, res) => {
 
   team.members.push(candidate.srn);
   r.status = 'accepted';
-  logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domain}" (accepted by ${req.user.srn})${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
+  logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domains.join(', ')}" (accepted by ${req.user.srn})${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
   // NOTE: their other pending requests/invites are intentionally kept alive
   // if team is now full, close this team's own waiting queue
   if (team.members.length === TEAM_SIZE) {
@@ -683,11 +700,10 @@ app.post('/api/teams/:id/leave', auth, (req, res) => {
     db.invites.forEach((i) => {
       if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
     });
-    logEvent('team_disbanded', `${req.user.name} (${req.user.srn}) disbanded team "${team.domain}"`);
+    logEvent('team_disbanded', `${req.user.name} (${req.user.srn}) disbanded team "${team.domains.join(', ')}"`);
   } else {
     team.members = team.members.filter((s) => s !== req.user.srn);
-    delete team.memberNotes[req.user.srn];
-    logEvent('member_left', `${req.user.name} (${req.user.srn}) left team "${team.domain}"`);
+    logEvent('member_left', `${req.user.name} (${req.user.srn}) left team "${team.domains.join(', ')}"`);
   }
   save();
   res.json({ ok: true });
