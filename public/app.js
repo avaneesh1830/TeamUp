@@ -22,6 +22,7 @@ let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
 let mentorQuery = '';
 let studentQuery = '';
+let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL' }; // students directory filters
 
 async function api(path, method = 'GET', body) {
   const res = await fetch('/api' + path, {
@@ -209,7 +210,7 @@ function render() {
   const views = { browse: browseHtml, students: studentsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml };
   $('content').innerHTML = views[activeTab]();
   bindActions();
-  if (activeTab === 'students' && studentQuery.trim()) searchStudents(); // re-fetch results after re-render
+  if (activeTab === 'students') searchStudents(); // directory loads immediately
 }
 
 // ---------- tab: browse teams ----------
@@ -290,22 +291,37 @@ function browseHtml() {
   );
 }
 
-// ---------- tab: students ----------
+// ---------- tab: students (full directory, alphabetical) ----------
 function studentsHtml() {
   return `<div class="section-head fade-up">
-    <div><h2>Students</h2><p>Search classmates by name or SRN — see who's free and who's already teamed up</p></div>
+    <div><h2>Students</h2><p>Everyone who has registered, A→Z — filter to find your ideal teammate</p></div>
+  </div>
+  <div class="card filter-bar fade-up">
+    <span class="lbl">Filters</span>
+    <select id="sfGender">
+      <option value="ALL">Any gender</option>
+      <option value="M" ${sFilters.gender === 'M' ? 'selected' : ''}>Male</option>
+      <option value="F" ${sFilters.gender === 'F' ? 'selected' : ''}>Female</option>
+    </select>
+    <select id="sfGrade">
+      <option value="ALL">Any grade</option>
+      ${['A', 'B', 'C'].map((g) => `<option value="${g}" ${sFilters.grade === g ? 'selected' : ''}>${g} grade</option>`).join('')}
+    </select>
+    <select id="sfDomain">
+      <option value="ALL">Any domain interest</option>
+      ${DOMAINS.map((d) => `<option value="${esc(d)}" ${sFilters.domain === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+    </select>
+    <span id="studentCount" class="count"></span>
   </div>
   <div class="card">
-    <input id="studentSearch" placeholder="🔎 Type a name or SRN…" value="${esc(studentQuery)}" autocomplete="off" />
-    <div id="studentResults">
-      ${studentQuery.trim() ? '' : '<div class="empty"><span class="big">🎓</span>Start typing to find students.</div>'}
-    </div>
+    <input id="studentSearch" placeholder="🔎 Search by name or SRN…" value="${esc(studentQuery)}" autocomplete="off" />
+    <div id="studentResults"><div class="empty">Loading students…</div></div>
   </div>`;
 }
 
 function studentResultsHtml(list) {
   if (list.length === 0)
-    return `<div class="empty"><span class="big">🤷</span>No student matches “${esc(studentQuery)}”.</div>`;
+    return `<div class="empty"><span class="big">🤷</span>No student matches ${studentQuery.trim() ? `“${esc(studentQuery)}”` : 'these filters'}.</div>`;
   return list
     .map((s) => {
       let status, joinBtn = '';
@@ -328,8 +344,11 @@ function studentResultsHtml(list) {
         eligible = `<p class="join-note" style="background:var(--green-bg);color:var(--green-ink)">✅ Eligible for your team — ask them to send a request!</p>`;
       else if (typeof s.eligibleForMyTeam === 'string')
         eligible = `<p class="join-note">⚠️ Can't join your team: ${esc(s.eligibleForMyTeam)}</p>`;
+      const interests = s.domains && s.domains.length
+        ? `<div class="interest-row">🎯 ${s.domains.map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>`
+        : '';
       return `<div class="student-row">
-        <div style="flex:1">${memberRow(s, null)}</div>
+        <div style="flex:1">${memberRow(s, null)}${interests}</div>
         <div>${status}</div>
         ${joinBtn}
         ${eligible}
@@ -342,13 +361,16 @@ let studentTimer;
 async function searchStudents() {
   const box = $('studentResults');
   if (!box) return;
-  if (!studentQuery.trim()) {
-    box.innerHTML = '<div class="empty"><span class="big">🎓</span>Start typing to find students.</div>';
-    return;
-  }
   try {
-    const list = await api('/students?q=' + encodeURIComponent(studentQuery.trim()));
+    const params = new URLSearchParams();
+    if (studentQuery.trim()) params.set('q', studentQuery.trim());
+    if (sFilters.gender !== 'ALL') params.set('gender', sFilters.gender);
+    if (sFilters.grade !== 'ALL') params.set('grade', sFilters.grade);
+    if (sFilters.domain !== 'ALL') params.set('domain', sFilters.domain);
+    const list = await api('/students?' + params.toString());
     if (!$('studentResults')) return; // user switched tabs mid-fetch
+    const counter = $('studentCount');
+    if (counter) counter.textContent = `${list.length} student${list.length === 1 ? '' : 's'}`;
     $('studentResults').innerHTML = studentResultsHtml(list);
     // re-bind the "📂 n projects" toggles inside results
     $('studentResults').querySelectorAll('[data-toggle]').forEach((b) => {
@@ -526,6 +548,15 @@ function profileHtml() {
   </div>
 
   <div class="card">
+    <h2>Interested domains</h2>
+    <p class="hint" style="margin-top:4px">Pick from the list — these show on your directory entry so teams working on what you love can find you. (Custom domains are only for naming a team you create.)</p>
+    <div class="chips" style="margin:6px 0 14px">
+      ${DOMAINS.map((d) => `<button class="chip interest ${u.domains.includes(d) ? 'active' : ''}" data-interest="${esc(d)}" type="button">${esc(d)}</button>`).join('')}
+    </div>
+    <button id="saveDomainsBtn" class="btn primary" type="button">Save interests</button>
+  </div>
+
+  <div class="card">
     <h2>Project showcase</h2>
     <p class="hint" style="margin-top:4px">Projects you've worked on — shown when people expand your name on team cards and join requests.</p>`;
 
@@ -574,6 +605,30 @@ function bindActions() {
   bindSel('fDomain', 'domain');
   bindSel('fGrade', 'grade');
   bindSel('fGender', 'gender');
+
+  // students directory filters (no full re-render — just refetch the list)
+  const bindSFilter = (id, key) => {
+    const el = $(id);
+    if (el) el.onchange = () => { sFilters[key] = el.value; searchStudents(); };
+  };
+  bindSFilter('sfGender', 'gender');
+  bindSFilter('sfGrade', 'grade');
+  bindSFilter('sfDomain', 'domain');
+
+  // profile: interested-domain chips (toggle, then save)
+  document.querySelectorAll('[data-interest]').forEach((b) => {
+    b.onclick = () => b.classList.toggle('active');
+  });
+  const saveDomainsBtn = $('saveDomainsBtn');
+  if (saveDomainsBtn)
+    saveDomainsBtn.onclick = async () => {
+      const domains = [...document.querySelectorAll('.chip.interest.active')].map((b) => b.dataset.interest);
+      try {
+        await api('/profile/domains', 'POST', { domains });
+        toast('Interests saved — you\'re now discoverable by domain 🎯', 'ok');
+        await refresh();
+      } catch (x) { toast(x.message); }
+    };
   const clearBtn = $('clearFilters');
   if (clearBtn)
     clearBtn.onclick = () => {

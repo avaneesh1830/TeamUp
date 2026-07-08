@@ -20,6 +20,7 @@ if (fs.existsSync(DATA_FILE)) {
 db.users.forEach((u) => {
   if (!u.projects) u.projects = [];
   if (u.github === undefined) u.github = '';
+  if (!u.domains) u.domains = []; // domains they're interested in working on
 });
 db.teams.forEach((t) => {
   if (!t.memberNotes) t.memberNotes = {};
@@ -50,6 +51,19 @@ if (fs.existsSync(PROF_FILE)) {
 // ---------- helpers ----------
 const TEAM_SIZE = 4;
 const BRANCHES = ['CSE', 'AIML', 'ECE'];
+// the official domain list — profile interests must come from here
+const DOMAINS = [
+  'AI / Machine Learning',
+  'Web Development',
+  'Mobile App Development',
+  'Data Science',
+  'Cybersecurity',
+  'Blockchain',
+  'IoT / Embedded Systems',
+  'Cloud Computing',
+  'AR / VR',
+  'Robotics',
+];
 const hashPw = (pw, salt) => crypto.scryptSync(pw, salt, 32).toString('hex');
 const gradeOf = (cgpa) => (cgpa >= 8 ? 'A' : cgpa >= 7 ? 'B' : 'C');
 const teamOf = (srn) => db.teams.find((t) => t.members.includes(srn));
@@ -113,6 +127,7 @@ const publicUser = (u) => ({
   grade: gradeOf(u.cgpa),
   projects: u.projects || [],
   github: u.github || '',
+  domains: u.domains || [],
 });
 
 function teamView(team, viewer) {
@@ -159,6 +174,7 @@ app.post('/api/register', (req, res) => {
     cgpa: c,
     projects: [],
     github: '',
+    domains: [],
     salt,
     pwHash: hashPw(password, salt),
     token: crypto.randomUUID(),
@@ -247,6 +263,17 @@ app.post('/api/profile', auth, (req, res) => {
   res.json({ ok: true });
 });
 
+// set the domains I'm interested in — must come from the official list, no free text
+app.post('/api/profile/domains', auth, (req, res) => {
+  const domains = req.body.domains;
+  if (!Array.isArray(domains)) return res.status(400).json({ error: 'Domains must be a list' });
+  const invalid = domains.filter((d) => !DOMAINS.includes(d));
+  if (invalid.length) return res.status(400).json({ error: `Not in the domain list: ${invalid.join(', ')}` });
+  req.user.domains = [...new Set(domains)];
+  save();
+  res.json({ ok: true });
+});
+
 // add a project to my showcase
 app.post('/api/profile/projects', auth, (req, res) => {
   const { title, description, link } = req.body;
@@ -305,15 +332,19 @@ app.get('/api/professors', auth, (req, res) => {
   res.json(professors);
 });
 
-// ---------- student search ----------
+// ---------- student directory (all students, alphabetical, filterable) ----------
 app.get('/api/students', auth, (req, res) => {
   const q = (req.query.q || '').trim().toLowerCase();
-  if (!q) return res.json([]);
+  const { gender, grade, domain } = req.query;
   const myTeam = teamOf(req.user.srn);
   const amLeader = myTeam && myTeam.leader === req.user.srn;
   const results = db.users
-    .filter((u) => u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q))
-    .slice(0, 20)
+    .filter((u) => !q || u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q))
+    .filter((u) => !gender || u.gender === gender)
+    .filter((u) => !grade || gradeOf(u.cgpa) === grade)
+    .filter((u) => !domain || (u.domains || []).includes(domain))
+    .sort((a, b) => a.name.localeCompare(b.name)) // alphabetical
+    .slice(0, 500)
     .map((u) => {
       const t = teamOf(u.srn);
       const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };

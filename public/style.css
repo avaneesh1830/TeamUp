@@ -474,6 +474,7 @@ footer p:first-child {
 .badge.closed { background: var(--surface-3); color: var(--outline); text-decoration: line-through; }
 .badge.free { background: var(--success-container); color: var(--on-success-container); }
 .badge.taken { background: var(--surface-3); color: var(--on-surface-variant); }
+.badge.domain { background: var(--tertiary-container); color: #00393a; }
 .badge.status-pending { background: var(--warn-container); color: var(--on-warn-container); }
 .badge.status-accepted { background: var(--success-container); color: var(--on-success-container); }
 .badge.status-rejected { background: var(--error-container); color: var(--on-error-container); }
@@ -681,6 +682,7 @@ footer p:first-child {
 .student-row:last-child { border-bottom: none; }
 .student-row .join-note { flex-basis: 100%; margin-top: 2px; }
 #studentResults { margin-top: 14px; }
+.interest-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.8rem; padding: 0 0 10px 24px; }
 
 /* ============ profile / danger zone ============ */
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 10px; }
