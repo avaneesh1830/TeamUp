@@ -53,18 +53,31 @@ if (fs.existsSync(PROF_FILE)) {
 // ---------- helpers ----------
 const TEAM_SIZE = 4;
 const BRANCHES = ['CSE', 'AIML', 'ECE'];
-// the official domain list — profile interests must come from here
+// the official domain list — team domains AND profile interests must come from here
 const DOMAINS = [
   'AI / Machine Learning',
+  'Deep Learning / Computer Vision',
+  'NLP / LLMs & Chatbots',
+  'Data Science & Analytics',
+  'Big Data',
   'Web Development',
   'Mobile App Development',
-  'Data Science',
+  'Game Development',
   'Cybersecurity',
-  'Blockchain',
+  'Blockchain / Web3',
+  'Cloud Computing / DevOps',
   'IoT / Embedded Systems',
-  'Cloud Computing',
+  'Robotics & Automation',
   'AR / VR',
-  'Robotics',
+  'Drones / UAV',
+  'VLSI / Chip Design',
+  'Networking / 5G',
+  'Signal & Image Processing',
+  'Renewable Energy / EV Tech',
+  'Quantum Computing',
+  'FinTech',
+  'HealthTech',
+  'EdTech',
 ];
 const hashPw = (pw, salt) => crypto.scryptSync(pw, salt, 32).toString('hex');
 const gradeOf = (cgpa) => (cgpa >= 8 ? 'A' : cgpa >= 7 ? 'B' : 'C');
@@ -213,12 +226,21 @@ app.post('/api/login', (req, res) => {
 app.get('/api/me', auth, (req, res) => {
   const me = req.user;
   const team = teamOf(me.srn);
-  const incoming =
-    team && team.leader === me.srn
-      ? db.requests
-          .filter((r) => r.teamId === team.id && r.status === 'pending')
-          .map((r) => ({ id: r.id, user: publicUser(userBySrn(r.srn)), whatsapp: r.whatsapp || '' }))
-      : [];
+  // any team member can see (and act on) incoming requests
+  const incoming = team
+    ? db.requests
+        .filter((r) => r.teamId === team.id && r.status === 'pending')
+        .map((r) => {
+          const candTeam = teamOf(r.srn);
+          return {
+            id: r.id,
+            user: publicUser(userBySrn(r.srn)),
+            whatsapp: r.whatsapp || '',
+            // heads-up for the team: this requester has since joined another team
+            candidateTeam: candTeam ? candTeam.domain : null,
+          };
+        })
+    : [];
   const outgoing = db.requests
     .filter((r) => r.srn === me.srn)
     .map((r) => {
@@ -239,16 +261,15 @@ app.get('/api/me', auth, (req, res) => {
         leaderName: leader ? leader.name : '',
       };
     });
-  // invitations I have sent as a leader
-  const sentInvites =
-    team && team.leader === me.srn
-      ? db.invites
-          .filter((i) => i.teamId === team.id)
-          .map((i) => {
-            const u = userBySrn(i.srn);
-            return { id: i.id, srn: i.srn, name: u ? u.name : i.srn, status: i.status };
-          })
-      : [];
+  // invitations my team has sent (visible to every member)
+  const sentInvites = team
+    ? db.invites
+        .filter((i) => i.teamId === team.id)
+        .map((i) => {
+          const u = userBySrn(i.srn);
+          return { id: i.id, srn: i.srn, name: u ? u.name : i.srn, status: i.status };
+        })
+    : [];
   res.json({
     user: { ...publicUser(me), cgpa: me.cgpa },
     team: team ? teamView(team, me) : null,
@@ -383,22 +404,31 @@ app.get('/api/professors', auth, (req, res) => {
 // ---------- student directory (all students, alphabetical, filterable) ----------
 app.get('/api/students', auth, (req, res) => {
   const q = (req.query.q || '').trim().toLowerCase();
-  const { gender, grade, domain } = req.query;
+  const { gender, grade, domain, eligible } = req.query;
   const myTeam = teamOf(req.user.srn);
-  const amLeader = myTeam && myTeam.leader === req.user.srn;
+  // any member of a team with an open seat gets invite powers + the eligibility filter
+  const canInvite = myTeam && slotInfo(myTeam).remaining > 0;
   const results = db.users
-    // no search text => directory of students still LOOKING for a team; searching shows everyone
-    .filter((u) => (q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn)))
+    // no search text => directory of students still LOOKING for a team (plus yourself); searching shows everyone
+    .filter((u) =>
+      q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn) || u.srn === req.user.srn
+    )
     .filter((u) => !gender || u.gender === gender)
     .filter((u) => !grade || gradeOf(u.cgpa) === grade)
     .filter((u) => !domain || (u.domains || []).includes(domain))
+    // "eligible for my team": passes every rule — branch, grade slot, gender slot
+    .filter(
+      (u) =>
+        eligible !== '1' ||
+        (myTeam && u.srn !== req.user.srn && !teamOf(u.srn) && joinBlock(myTeam, u) === null)
+    )
     .sort((a, b) => a.name.localeCompare(b.name)) // alphabetical
     .slice(0, 500)
     .map((u) => {
       const t = teamOf(u.srn);
       const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domain, branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
-      // if the searcher leads a team with open seats, say whether this student could join it
-      if (amLeader && !t && u.srn !== req.user.srn) {
+      // if the searcher's team has open seats, say whether this student could join it
+      if (canInvite && !t && u.srn !== req.user.srn) {
         out.eligibleForMyTeam = joinBlock(myTeam, u);
         out.invited = !!db.invites.find((i) => i.teamId === myTeam.id && i.srn === u.srn && i.status === 'pending');
       }
@@ -426,12 +456,13 @@ app.get('/api/teams', auth, (req, res) => {
 
 app.post('/api/teams', auth, (req, res) => {
   const { domain } = req.body;
-  if (!domain || !domain.trim()) return res.status(400).json({ error: 'Project domain is required' });
-  if (domain.trim().length > 60) return res.status(400).json({ error: 'Domain name too long (max 60 chars)' });
+  // domain must come from the official list — no custom team domains
+  if (!DOMAINS.includes(domain))
+    return res.status(400).json({ error: 'Pick a project domain from the list' });
   if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
   const team = {
     id: crypto.randomUUID(),
-    domain: domain.trim(),
+    domain,
     branch: req.user.branch, // team belongs to the leader's branch
     leader: req.user.srn,
     members: [req.user.srn],
@@ -439,10 +470,6 @@ app.post('/api/teams', auth, (req, res) => {
     mentor: null,
   };
   db.teams.push(team);
-  // creating a team cancels your pending join requests
-  db.requests.forEach((r) => {
-    if (r.srn === req.user.srn && r.status === 'pending') r.status = 'cancelled';
-  });
   logEvent('team_created', `${req.user.name} (${req.user.srn}) created team "${team.domain}" [${team.branch}]`);
   save();
   res.json(teamView(team, req.user));
@@ -515,12 +542,12 @@ app.post('/api/teams/:id/join', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// leader invites a student to their team (branch + grade + gender rules enforced)
+// any team member invites a student to their team (branch + grade + gender rules enforced)
 app.post('/api/teams/:id/invite', auth, (req, res) => {
   const team = db.teams.find((t) => t.id === req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
-  if (team.leader !== req.user.srn)
-    return res.status(403).json({ error: 'Only the team leader can invite students' });
+  if (!team.members.includes(req.user.srn))
+    return res.status(403).json({ error: 'Only members of this team can invite students' });
   const cand = userBySrn(String(req.body.srn || '').toUpperCase());
   if (!cand) return res.status(404).json({ error: 'Student not found' });
   if (cand.srn === req.user.srn) return res.status(400).json({ error: "You can't invite yourself" });
@@ -535,10 +562,21 @@ app.post('/api/teams/:id/invite', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// invited student accepts / rejects an invitation
+// invited student accepts / rejects · the inviting team can cancel
 app.post('/api/invites/:id', auth, (req, res) => {
   const inv = db.invites.find((x) => x.id === req.params.id);
   if (!inv || inv.status !== 'pending') return res.status(404).json({ error: 'Invitation not found' });
+
+  // any member of the inviting team can withdraw the invite
+  if (req.body.action === 'cancel') {
+    const t = db.teams.find((x) => x.id === inv.teamId);
+    if (!t || !t.members.includes(req.user.srn))
+      return res.status(403).json({ error: 'Only the inviting team can cancel this' });
+    inv.status = 'cancelled';
+    save();
+    return res.json({ ok: true });
+  }
+
   if (inv.srn !== req.user.srn) return res.status(403).json({ error: 'This invitation is not for you' });
 
   if (req.body.action === 'reject') {
@@ -556,10 +594,8 @@ app.post('/api/invites/:id', auth, (req, res) => {
   team.members.push(req.user.srn);
   inv.status = 'accepted';
   logEvent('member_joined', `${req.user.name} (${req.user.srn}) joined team "${team.domain}" (accepted invitation)${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
-  // cancel their other pending invites + join requests
-  db.invites.forEach((x) => { if (x.srn === req.user.srn && x.status === 'pending') x.status = 'cancelled'; });
-  db.requests.forEach((x) => { if (x.srn === req.user.srn && x.status === 'pending') x.status = 'cancelled'; });
-  // if team is now full, close the remaining queue
+  // NOTE: their other pending invites/requests stay alive on purpose
+  // if team is now full, close this team's remaining queue
   if (team.members.length === TEAM_SIZE) {
     db.requests.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected'; });
     db.invites.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled'; });
@@ -586,14 +622,23 @@ app.post('/api/teams/:id/kick', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// leader accepts / rejects a request
+// accept / reject (any team member) · cancel (the requester themselves)
 app.post('/api/requests/:id', auth, (req, res) => {
-  const { action } = req.body; // 'accept' | 'reject'
+  const { action } = req.body; // 'accept' | 'reject' | 'cancel'
   const r = db.requests.find((x) => x.id === req.params.id);
   if (!r || r.status !== 'pending') return res.status(404).json({ error: 'Request not found' });
+
+  // a student can cancel their own pending request
+  if (action === 'cancel') {
+    if (r.srn !== req.user.srn) return res.status(403).json({ error: 'Only the requester can cancel this' });
+    r.status = 'cancelled';
+    save();
+    return res.json({ ok: true });
+  }
+
   const team = db.teams.find((t) => t.id === r.teamId);
-  if (!team || team.leader !== req.user.srn)
-    return res.status(403).json({ error: 'Only the team leader can do this' });
+  if (!team || !team.members.includes(req.user.srn))
+    return res.status(403).json({ error: 'Only members of this team can do this' });
 
   if (action === 'reject') {
     r.status = 'rejected';
@@ -602,25 +647,17 @@ app.post('/api/requests/:id', auth, (req, res) => {
   }
 
   const candidate = userBySrn(r.srn);
-  if (teamOf(candidate.srn)) {
-    r.status = 'cancelled';
-    save();
-    return res.status(400).json({ error: 'This student already joined another team' });
-  }
+  // keep the request pending "just in case" they leave that team later
+  if (teamOf(candidate.srn))
+    return res.status(400).json({ error: 'This student is currently in another team — the request stays pending in case they leave' });
   const block = joinBlock(team, candidate);
   if (block) return res.status(400).json({ error: `Cannot accept: ${block}` });
 
   team.members.push(candidate.srn);
   r.status = 'accepted';
-  logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domain}"${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
-  // cancel the candidate's other pending requests and invites
-  db.requests.forEach((x) => {
-    if (x.srn === candidate.srn && x.status === 'pending') x.status = 'cancelled';
-  });
-  db.invites.forEach((x) => {
-    if (x.srn === candidate.srn && x.status === 'pending') x.status = 'cancelled';
-  });
-  // if team is now full, reject everyone else who was waiting
+  logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domain}" (accepted by ${req.user.srn})${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
+  // NOTE: their other pending requests/invites are intentionally kept alive
+  // if team is now full, close this team's own waiting queue
   if (team.members.length === TEAM_SIZE) {
     db.requests.forEach((x) => {
       if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected';

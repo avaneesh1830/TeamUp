@@ -1,15 +1,28 @@
 // ---------- constants ----------
 const DOMAINS = [
   'AI / Machine Learning',
+  'Deep Learning / Computer Vision',
+  'NLP / LLMs & Chatbots',
+  'Data Science & Analytics',
+  'Big Data',
   'Web Development',
   'Mobile App Development',
-  'Data Science',
+  'Game Development',
   'Cybersecurity',
-  'Blockchain',
+  'Blockchain / Web3',
+  'Cloud Computing / DevOps',
   'IoT / Embedded Systems',
-  'Cloud Computing',
+  'Robotics & Automation',
   'AR / VR',
-  'Robotics',
+  'Drones / UAV',
+  'VLSI / Chip Design',
+  'Networking / 5G',
+  'Signal & Image Processing',
+  'Renewable Energy / EV Tech',
+  'Quantum Computing',
+  'FinTech',
+  'HealthTech',
+  'EdTech',
 ];
 const BRANCHES = ['CSE', 'AIML', 'ECE'];
 
@@ -22,7 +35,7 @@ let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
 let mentorQuery = '';
 let studentQuery = '';
-let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL' }; // students directory filters
+let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
 
 async function api(path, method = 'GET', body) {
   const res = await fetch('/api' + path, {
@@ -313,6 +326,11 @@ function studentsHtml() {
       <option value="ALL">Any domain interest</option>
       ${DOMAINS.map((d) => `<option value="${esc(d)}" ${sFilters.domain === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
     </select>
+    ${
+      me.team && me.team.slots.remaining > 0
+        ? `<button id="sfEligible" class="chip ${sFilters.eligible ? 'active' : ''}" type="button">Eligible for my team</button>`
+        : ''
+    }
     <span id="studentCount" class="count"></span>
   </div>
   <div class="card">
@@ -354,12 +372,13 @@ function studentResultsHtml(list) {
       const waChip = s.whatsapp
         ? `<a class="wa-chip sm" href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">💬 +${esc(s.whatsapp)}</a>`
         : `<span class="srn" style="font-size:0.75rem">no number shared</span>`;
+      const isMe = s.srn === me.user.srn;
       return `<div class="student-row">
         <div style="flex:1">${memberRow(s, null)}${interests}</div>
-        ${waChip}
+        ${isMe ? '<span class="badge branch">You</span>' : waChip}
         <div>${status}</div>
-        ${joinBtn}
-        ${eligible}
+        ${isMe ? '' : joinBtn}
+        ${isMe ? '' : eligible}
       </div>`;
     })
     .join('');
@@ -375,6 +394,7 @@ async function searchStudents() {
     if (sFilters.gender !== 'ALL') params.set('gender', sFilters.gender);
     if (sFilters.grade !== 'ALL') params.set('grade', sFilters.grade);
     if (sFilters.domain !== 'ALL') params.set('domain', sFilters.domain);
+    if (sFilters.eligible) params.set('eligible', '1');
     const list = await api('/students?' + params.toString());
     if (!$('studentResults')) return; // user switched tabs mid-fetch
     const counter = $('studentCount');
@@ -408,18 +428,14 @@ function myTeamTabHtml() {
     return `<div class="section-head fade-up"><div><h2>My Team</h2><p>You're not in a team yet — create one and lead it</p></div></div>
     <div class="card">
       <h2>Create a team</h2>
-      <p class="hint" style="margin-top:4px">Pick the project domain your team will work on. You become the team leader and approve who joins.</p>
+      <p class="hint" style="margin-top:4px">Pick the project domain your team will work on (from the official list). You become the team leader.</p>
       <form id="createForm" class="create-grid">
         <label>Project domain
           <select id="domainSelect" required>
             <option value="">Select a domain…</option>
             ${options}
-            <option value="__custom__">Other (type your own)…</option>
           </select>
         </label>
-        <div id="customWrap" class="custom-domain-wrap">
-          <label>Custom domain <input id="customDomain" maxlength="60" placeholder="e.g. Quantum Computing" /></label>
-        </div>
         <button class="btn primary" type="submit">Create team — you become leader</button>
       </form>
     </div>`;
@@ -484,15 +500,13 @@ function myTeamTabHtml() {
     </form>
 
     ${slotRow(t.slots)}
-    ${t.slots.remaining > 0 && isLeader ? `<p class="join-note">💡 Waiting on join requests? Check the <strong>Requests</strong> tab.</p>` : ''}
+    ${t.slots.remaining > 0 ? `<p class="join-note">💡 Any member can accept requests or invite students — check the <strong>Requests</strong> and <strong>Students</strong> tabs.</p>` : ''}
   </div>`;
 }
 
 // ---------- tab: requests ----------
 function requestsHtml() {
   let html = `<div class="section-head fade-up"><div><h2>Requests</h2><p>Join requests and team invitations</p></div></div>`;
-
-  const isLeader = me.team && me.team.leader === me.user.srn;
 
   // invitations sent TO me by team leaders
   const pendingInv = me.invites.filter((i) => i.status === 'pending');
@@ -517,18 +531,23 @@ function requestsHtml() {
     html += `</div>`;
   }
 
-  // invitations I sent as leader
-  if (isLeader && me.sentInvites.length > 0) {
-    html += `<div class="card"><h2>Invites I've sent</h2>
+  // invitations my team has sent (any member can see + cancel)
+  if (me.team && me.sentInvites.length > 0) {
+    html += `<div class="card"><h2>Invites my team has sent</h2>
       ${me.sentInvites
         .map(
           (i) => `<div class="req-row"><span>${esc(i.name)} <span class="srn">${esc(i.srn)}</span></span>
-            <span class="badge status-${i.status}">${i.status}</span></div>`
+            ${
+              i.status === 'pending'
+                ? `<button class="btn small danger" data-inv-cancel="${i.id}" type="button">Cancel invite</button>`
+                : `<span class="badge status-${i.status}">${i.status}</span>`
+            }</div>`
         )
         .join('')}
     </div>`;
   }
-  if (isLeader) {
+  // incoming join requests — any member of the team can act on them
+  if (me.team) {
     html += `<div class="card"><h2>Incoming — students who want to join</h2>`;
     if (me.incoming.length === 0) {
       html += `<div class="empty"><span class="big">📭</span>No pending requests.<br/>Tell your classmates to find your team under <strong>${esc(me.team.domain)}</strong>.</div>`;
@@ -536,10 +555,12 @@ function requestsHtml() {
       html += me.incoming
         .map(
           (r) => `<div class="req-row">
-            <div style="flex:1">${memberRow(r.user, null)}</div>
+            <div style="flex:1">${memberRow(r.user, null)}
+              ${r.candidateTeam ? `<p class="join-note">ℹ️ Already joined team "${esc(r.candidateTeam)}" — request stays here in case they leave it</p>` : ''}
+            </div>
             <div class="req-actions">
               ${r.whatsapp ? `<a class="wa-chip" href="https://wa.me/${esc(r.whatsapp)}" target="_blank" rel="noopener" title="+${esc(r.whatsapp)}">💬 WhatsApp</a>` : ''}
-              <button class="btn small success" data-accept="${r.id}" type="button">Accept</button>
+              <button class="btn small success" data-accept="${r.id}" ${r.candidateTeam ? 'disabled title="Currently in another team"' : ''} type="button">Accept</button>
               <button class="btn small danger" data-reject="${r.id}" type="button">Reject</button>
             </div>
           </div>`
@@ -558,7 +579,11 @@ function requestsHtml() {
     html += [...pending, ...decided]
       .map(
         (r) => `<div class="req-row"><span>${esc(r.teamDomain)}</span>
-          <span class="badge status-${r.status}">${r.status}</span></div>`
+          ${
+            r.status === 'pending'
+              ? `<button class="btn small danger" data-cancel-req="${r.id}" type="button">Cancel request</button>`
+              : `<span class="badge status-${r.status}">${r.status}</span>`
+          }</div>`
       )
       .join('');
   }
@@ -668,6 +693,13 @@ function bindActions() {
   bindSFilter('sfGender', 'gender');
   bindSFilter('sfGrade', 'grade');
   bindSFilter('sfDomain', 'domain');
+  const sfEligible = $('sfEligible');
+  if (sfEligible)
+    sfEligible.onclick = () => {
+      sFilters.eligible = !sFilters.eligible;
+      sfEligible.classList.toggle('active', sFilters.eligible);
+      searchStudents();
+    };
 
   // profile: interested-domain chips (toggle, then save)
   document.querySelectorAll('[data-interest]').forEach((b) => {
@@ -697,16 +729,10 @@ function bindActions() {
 
   const createForm = $('createForm');
   if (createForm) {
-    const sel = $('domainSelect');
-    sel.onchange = () => {
-      const custom = sel.value === '__custom__';
-      $('customWrap').classList.toggle('open', custom);
-      if (custom) $('customDomain').focus();
-    };
     createForm.onsubmit = async (e) => {
       e.preventDefault();
-      const domain = sel.value === '__custom__' ? $('customDomain').value : sel.value;
-      if (!domain.trim()) return toast('Please enter your custom domain');
+      const domain = $('domainSelect').value;
+      if (!domain) return toast('Please pick a domain from the list');
       try {
         await api('/teams', 'POST', { domain });
         toast('Team created! You are the leader 👑', 'ok');
@@ -860,6 +886,26 @@ function bindActions() {
     b.onclick = async () => {
       try {
         await api(`/invites/${b.dataset.invReject}`, 'POST', { action: 'reject' });
+        refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+  // team member cancels a sent invite
+  document.querySelectorAll('[data-inv-cancel]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/invites/${b.dataset.invCancel}`, 'POST', { action: 'cancel' });
+        toast('Invite cancelled', 'ok');
+        refresh();
+      } catch (x) { toast(x.message); }
+    };
+  });
+  // student cancels their own sent join request
+  document.querySelectorAll('[data-cancel-req]').forEach((b) => {
+    b.onclick = async () => {
+      try {
+        await api(`/requests/${b.dataset.cancelReq}`, 'POST', { action: 'cancel' });
+        toast('Request cancelled', 'ok');
         refresh();
       } catch (x) { toast(x.message); }
     };
