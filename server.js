@@ -293,7 +293,7 @@ app.post('/api/register', (req, res) => {
     token: crypto.randomUUID(),
   };
   // account is only created after the email OTP is verified
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
   pendingRegs[id] = { user, code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
   sendOtpMail(email, code).catch((e) => console.error('OTP mail failed:', e.message));
   res.json({ otp: true, email: maskEmail(email) });
@@ -334,7 +334,7 @@ app.post('/api/login', (req, res) => {
 app.post('/api/forgot', (req, res) => {
   const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
   if (user && user.email && pwChangeAllowed(user)) {
-    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+    const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
     otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
     sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
     logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
