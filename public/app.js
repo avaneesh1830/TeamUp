@@ -66,8 +66,24 @@ function toast(msg, type = 'err') {
   toastTimer = setTimeout(() => (t.className = ''), 3500);
 }
 
+// ---------- intro / welcome view ----------
+// shown before login AND once again right after logging in
+function showIntro(afterLogin = false) {
+  $('introView').classList.remove('hidden');
+  $('authView').classList.add('hidden');
+  $('mainView').classList.add('hidden');
+  const btn = $('introContinue');
+  btn.textContent = afterLogin || token ? 'Continue to TeamUp →' : 'Get started →';
+  btn.onclick = () => {
+    $('introView').classList.add('hidden');
+    refresh(); // routes to auth (no token) or the main app
+  };
+  window.scrollTo(0, 0);
+}
+
 // ---------- auth view ----------
 function showAuth() {
+  $('introView').classList.add('hidden');
   $('authView').classList.remove('hidden');
   $('mainView').classList.add('hidden');
 }
@@ -110,7 +126,7 @@ function setToken(t) {
   token = t;
   localStorage.setItem('token', t);
   activeTab = 'browse';
-  refresh();
+  showIntro(true); // welcome page again right after logging in
 }
 
 function logout() {
@@ -260,6 +276,7 @@ function teamCardHead(t, right = '') {
 
 // ---------- main render ----------
 function render() {
+  $('introView').classList.add('hidden');
   $('authView').classList.add('hidden');
   $('mainView').classList.remove('hidden');
   $('meName').textContent = me.user.name;
@@ -1069,6 +1086,12 @@ async function refresh() {
   }
 }
 
-refresh();
+// footer "About" link re-opens the welcome page anytime
+const aboutLink = $('aboutLink');
+if (aboutLink) aboutLink.onclick = () => showIntro();
+
+// first load: visitors see the welcome page; logged-in users go straight in
+if (!token) showIntro();
+else refresh();
 // background sync every 30s (user actions always refresh instantly on their own)
 setInterval(() => { if (token && me) refresh(); }, 30000);

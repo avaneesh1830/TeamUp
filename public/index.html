@@ -18,13 +18,75 @@
 
   <div id="toast"></div>
 
+  <!-- ============ INTRO / WELCOME VIEW ============ -->
+  <div id="introView" class="intro-wrap hidden">
+    <div class="intro-card fade-up">
+      <div class="auth-hero">
+        <h1 class="brand">Team<span>Up</span></h1>
+        <p class="campus-tag">Made in PESU for PESU ❤️</p>
+      </div>
+
+      <h2>Hello there 👋 Welcome to TeamUp</h2>
+      <p class="intro-text">A portal made to form teams for <strong>Capstone 2026–28</strong>.</p>
+      <p class="intro-text">Here, you can connect with students from other sections who share your
+        academic goals and interests — form a new team or join an existing one based on the
+        academic and gender criteria. You can also browse and find the right <strong>project mentor</strong>
+        whose expertise aligns with the domain you choose.</p>
+      <p class="intro-text">This website has all the required criteria built in, which will help you
+        filter out students who are eligible for your team — or the team you would want to join.</p>
+
+      <h3>📋 Team criteria</h3>
+      <div class="combo-grid">
+        <div class="combo-box ok">
+          <h4>✅ Allowed grade combinations</h4>
+          <p><span class="badge open">A A B C</span> <span class="badge open">A B B C</span>
+             <span class="badge open">A B C C</span> <span class="badge open">A A C C</span>
+             <span class="badge open">B B C C</span></p>
+        </div>
+        <div class="combo-box no">
+          <h4>❌ Not allowed</h4>
+          <p><span class="badge C">A A B B</span> — or any other combination</p>
+        </div>
+      </div>
+      <p class="intro-text hint">A = CGPA 8+ · B = 7–8 · C = below 7 · teams of exactly 4, same branch ·
+        mixed-gender teams are <strong>preferred but not compulsory</strong> — all-male or all-female teams are allowed.</p>
+
+      <h3>🗺️ Guidelines &amp; roadmap — your Capstone over the next 2 years</h3>
+      <div class="phase-grid">
+        <div class="phase-card">
+          <span class="badge branch">UE24CS320A · 5th sem · 2 credits</span>
+          <h4>Capstone Project Phase-1</h4>
+          <p>Formation of teams, identification of supervisors, background study, formulation of the
+             problem statement, literature survey, preprocessing of data sets, etc.</p>
+        </div>
+        <div class="phase-card">
+          <span class="badge branch">UE24CS320B · 6th sem · 2 credits</span>
+          <h4>Capstone Project Phase-2</h4>
+          <p>High level design, part of implementation.</p>
+        </div>
+        <div class="phase-card">
+          <span class="badge branch">UE24CS421A · 7th sem · 4 credits</span>
+          <h4>Capstone Project Phase-3</h4>
+          <p>Low level design and complete implementation, draft version of the paper for publishing.</p>
+        </div>
+        <div class="phase-card">
+          <span class="badge branch">UE24CS421B · 8th sem · 4 credits</span>
+          <h4>Capstone Project Phase-4</h4>
+          <p>Paper publication in Scopus indexed journals / Web of Science / UGC journals, etc.</p>
+        </div>
+      </div>
+
+      <button id="introContinue" class="btn primary full" type="button">Get started →</button>
+    </div>
+  </div>
+
   <!-- ============ AUTH VIEW ============ -->
   <div id="authView" class="auth-wrap hidden">
     <div class="auth-card fade-up">
       <div class="auth-hero">
         <h1 class="brand">Team<span>Up</span></h1>
         <p class="tagline">Find your BTech project team · 3rd &amp; 4th year</p>
-        <p class="campus-tag">Made for PES ECity campus</p>
+        <p class="campus-tag">Made in PESU for PESU ❤️</p>
       </div>
 
       <div class="tabs">
@@ -96,7 +158,8 @@
 
     <footer>
       <p>Team rules: 4 members · grade mix must be AABC, ABBC, ABCC, AACC or BBCC · same branch only · mixed-gender teams preferred but not required</p>
-      <p class="campus-tag">Made for PES ECity campus</p>
+      <p class="campus-tag">Made in PESU for PESU ❤️</p>
+      <p><button id="aboutLink" class="linklike" type="button">ℹ️ About TeamUp &amp; Capstone roadmap</button></p>
     </footer>
   </div>
 

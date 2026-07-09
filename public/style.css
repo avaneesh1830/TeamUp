@@ -743,6 +743,54 @@ footer p:first-child {
 .modal-card .hint { margin: 0 0 16px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
+/* ============ intro / welcome page ============ */
+.intro-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.intro-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  padding: 40px;
+  width: 100%;
+  max-width: 820px;
+  box-shadow: var(--e3);
+}
+.intro-card h2 { font-size: 1.5rem; margin: 18px 0 10px; }
+.intro-card h3 {
+  font-size: 0.8rem;
+  margin: 26px 0 12px;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.intro-text { font-size: 0.95rem; line-height: 1.7; margin-bottom: 10px; color: var(--on-surface); }
+.intro-text.hint { font-size: 0.82rem; color: var(--on-surface-variant); }
+
+.combo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.combo-box { border-radius: 14px; padding: 14px 16px; }
+.combo-box.ok { background: var(--success-container); }
+.combo-box.no { background: var(--error-container); }
+.combo-box h4 { font-size: 0.85rem; margin-bottom: 8px; }
+.combo-box p { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.82rem; }
+
+.phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.phase-card {
+  background: var(--surface-1);
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.phase-card h4 { margin: 8px 0 6px; font-size: 0.95rem; }
+.phase-card p { font-size: 0.82rem; color: var(--on-surface-variant); line-height: 1.55; }
+
 /* ============ mobile ============ */
 @media (max-width: 700px) {
   header { padding: 10px 12px; }
@@ -784,8 +832,11 @@ footer p:first-child {
   .btn.small { min-height: 40px; }
   .chip { padding: 9px 16px; }
 
+  .combo-grid, .phase-grid { grid-template-columns: 1fr; }
+  .intro-card { padding: 24px 18px; border-radius: 20px; }
+
   /* lighter glass on phones — heavy blur is expensive on mobile GPUs */
-  .card, .auth-card, header, .main-tabs {
+  .card, .auth-card, .intro-card, header, .main-tabs {
     background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
