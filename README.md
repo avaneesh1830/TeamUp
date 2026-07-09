@@ -127,6 +127,20 @@ Any machine with Docker can run it without cloning the repo:
 docker run -d -p 3000:3000 -v teamup-data:/data --name teamup avaneesharoor/teamup
 ```
 
+## Password reset emails (OTP)
+
+Forgot-password OTPs are emailed via SMTP. Set these env vars to enable real mail
+(e.g. a Gmail address with an [app password](https://myaccount.google.com/apppasswords)):
+
+```bash
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=your-app-password
+# optional: SMTP_HOST (default smtp.gmail.com), SMTP_FROM
+```
+
+Without them the server runs in dev mode and prints OTPs to its console.
+Password changes are limited to 3 per day per account.
+
 ## Deployment
 
 > 🌐 **If deployed, the URL will be posted here.**

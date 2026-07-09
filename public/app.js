@@ -94,8 +94,37 @@ function switchAuthTab(login) {
   $('tabRegister').classList.toggle('active', !login);
   $('loginForm').classList.toggle('hidden', !login);
   $('registerForm').classList.toggle('hidden', login);
+  $('forgotForm').classList.add('hidden');
   $('authError').textContent = '';
 }
+
+// ---------- forgot password (email OTP) ----------
+$('forgotLink').onclick = () => {
+  $('loginForm').classList.add('hidden');
+  $('forgotForm').classList.remove('hidden');
+  $('fpStep2').classList.add('hidden');
+  $('fpBtn').textContent = 'Send OTP';
+  $('authError').textContent = '';
+};
+$('fpBack').onclick = () => switchAuthTab(true);
+$('forgotForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const step2 = !$('fpStep2').classList.contains('hidden');
+  try {
+    if (!step2) {
+      const r = await api('/forgot', 'POST', { srn: $('fpSrn').value });
+      $('fpStep2').classList.remove('hidden');
+      $('fpBtn').textContent = 'Verify OTP & change password';
+      $('authError').textContent = '';
+      toast(`OTP sent to ${r.email} — valid for 10 minutes`, 'ok');
+      $('fpOtp').focus();
+    } else {
+      await api('/reset', 'POST', { srn: $('fpSrn').value, otp: $('fpOtp').value, password: $('fpPw').value });
+      toast('Password changed — log in with your new password', 'ok');
+      switchAuthTab(true);
+    }
+  } catch (err) { $('authError').textContent = err.message; }
+};
 
 $('loginForm').onsubmit = async (e) => {
   e.preventDefault();
@@ -114,6 +143,7 @@ $('registerForm').onsubmit = async (e) => {
       branch: $('regBranch').value,
       gender: $('regGender').value,
       cgpa: $('regCgpa').value,
+      email: $('regEmail').value,
       whatsapp: $('regWa').value,
       password: $('regPw').value,
     });
@@ -693,7 +723,10 @@ function profileHtml() {
         <label>CGPA <input id="editCgpa" type="number" step="0.01" min="0" max="10" required value="${u.cgpa}" /></label>
         <label>WhatsApp number <input id="editWa" inputmode="tel" maxlength="16" value="${esc(u.whatsapp)}" placeholder="Shown to classmates" /></label>
       </div>
-      <label>New password <input id="editPw" type="password" minlength="4" placeholder="Leave blank to keep current" /></label>
+      <div class="row2">
+        <label>Email <input id="editEmail" type="email" value="${esc(u.email || '')}" placeholder="For password reset OTPs" /></label>
+        <label>New password <input id="editPw" type="password" minlength="4" placeholder="Leave blank to keep current" /></label>
+      </div>
       <button class="btn primary" type="submit">Save changes</button>
     </form>
   </div>
@@ -897,6 +930,7 @@ function bindActions() {
           gender: $('editGender').value,
           cgpa: $('editCgpa').value,
           whatsapp: $('editWa').value,
+          email: $('editEmail').value,
           password: $('editPw').value,
         });
         toast('Your details are updated', 'ok');

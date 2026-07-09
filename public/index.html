@@ -143,6 +143,17 @@
         <label>SRN <input id="loginSrn" required placeholder="PES1UG23CS001" /></label>
         <label>Password <input id="loginPw" type="password" required /></label>
         <button class="btn primary full" type="submit">Login</button>
+        <p style="text-align:center;margin-top:10px"><button id="forgotLink" class="linklike" type="button">Forgot password?</button></p>
+      </form>
+
+      <form id="forgotForm" class="hidden">
+        <label>SRN <input id="fpSrn" required placeholder="PES1UG23CS001" /></label>
+        <div id="fpStep2" class="hidden">
+          <label>OTP — check your email <input id="fpOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" /></label>
+          <label>New password <input id="fpPw" type="password" minlength="4" /></label>
+        </div>
+        <button id="fpBtn" class="btn primary full" type="submit">Send OTP</button>
+        <button id="fpBack" class="btn ghost full" type="button" style="margin-top:8px">← Back to login</button>
       </form>
 
       <form id="registerForm" class="hidden">
@@ -167,6 +178,7 @@
         </div>
         <label>CGPA <input id="regCgpa" type="number" step="0.01" min="0" max="10" required placeholder="e.g. 8.25" /></label>
         <p class="hint">A grade = 8+ · B = 7–8 · C = below 7. Others only see your grade letter, never your CGPA.</p>
+        <label>Email <input id="regEmail" type="email" required placeholder="Used for password reset OTPs" /></label>
         <label>WhatsApp number (optional) <input id="regWa" inputmode="tel" maxlength="16" placeholder="So teammates can reach you" /></label>
         <label>Password <input id="regPw" type="password" minlength="4" required /></label>
         <button class="btn primary full" type="submit">Create account</button>

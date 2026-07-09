@@ -23,6 +23,8 @@ db.users.forEach((u) => {
   if (!u.domains) u.domains = []; // domains they're interested in working on
   if (u.whatsapp === undefined) u.whatsapp = '';
   if (u.bio === undefined) u.bio = ''; // personal "what I've worked on"
+  if (u.email === undefined) u.email = '';
+  if (!u.pwChanges) u.pwChanges = []; // timestamps, for the 3-changes-per-day limit
 });
 db.teams.forEach((t) => {
   if (t.mentor === undefined) t.mentor = null;
@@ -96,6 +98,49 @@ const gradeOf = (cgpa) => (cgpa >= 8 ? 'A' : cgpa >= 7 ? 'B' : 'C');
 const teamOf = (srn) => db.teams.find((t) => t.members.includes(srn));
 const userBySrn = (srn) => db.users.find((u) => u.srn === srn);
 const isHttp = (s) => /^https?:\/\/\S+$/i.test(s);
+const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+// ---------- password reset via email OTP ----------
+// real mail goes out when SMTP_USER/SMTP_PASS are set (e.g. a Gmail app password);
+// otherwise the OTP is printed to the server console (dev mode)
+let mailer = null;
+if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  const nodemailer = require('nodemailer');
+  mailer = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+}
+async function sendOtpMail(to, code) {
+  if (!mailer) {
+    console.log(`[DEV MODE — no SMTP configured] OTP for ${to}: ${code}`);
+    return;
+  }
+  await mailer.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject: 'TeamUp — your password reset OTP',
+    text: `Your TeamUp password reset OTP is: ${code}\n\nIt expires in 10 minutes. If you didn't request this, just ignore this email.`,
+  });
+}
+const otps = {}; // srn -> { code, expires, tries }
+const maskEmail = (e) => e.replace(/^(.).*(@.*)$/, '$1•••$2');
+
+// password changes (any method) limited to 3 per day
+function pwChangeAllowed(u) {
+  const DAY = 24 * 60 * 60 * 1000;
+  u.pwChanges = (u.pwChanges || []).filter((t) => Date.now() - t < DAY);
+  return u.pwChanges.length < 3;
+}
+function setPassword(u, password) {
+  u.salt = crypto.randomBytes(8).toString('hex');
+  u.pwHash = hashPw(password, u.salt);
+  u.token = crypto.randomUUID(); // log out existing sessions
+  u.pwChanges.push(Date.now());
+}
+
 // normalize a WhatsApp number: '' if empty, null if invalid, else digits with country code
 function normWa(x) {
   let wa = String(x || '').replace(/\D/g, '');
@@ -214,6 +259,8 @@ app.post('/api/register', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 4 characters' });
   const id = srn.trim().toUpperCase();
   if (userBySrn(id)) return res.status(400).json({ error: 'This SRN is already registered' });
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (!isEmail(email)) return res.status(400).json({ error: 'Enter a valid email — you need it to reset your password' });
   const wa = normWa(req.body.whatsapp);
   if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
   const salt = crypto.randomBytes(8).toString('hex');
@@ -223,10 +270,12 @@ app.post('/api/register', (req, res) => {
     gender,
     branch,
     cgpa: c,
+    email,
     projects: [],
     github: '',
     domains: [],
     whatsapp: wa,
+    pwChanges: [],
     salt,
     pwHash: hashPw(password, salt),
     token: crypto.randomUUID(),
@@ -245,6 +294,44 @@ app.post('/api/login', (req, res) => {
   user.token = crypto.randomUUID();
   save();
   res.json({ token: user.token });
+});
+
+// forgot password: step 1 — send an OTP to the account's email
+app.post('/api/forgot', (req, res) => {
+  const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
+  if (!user) return res.status(404).json({ error: 'No account with that SRN' });
+  if (!user.email)
+    return res.status(400).json({ error: 'No email on this account — add one from My Profile while logged in' });
+  if (!pwChangeAllowed(user))
+    return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
+  const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+  otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
+  sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
+  logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
+  res.json({ ok: true, email: maskEmail(user.email) });
+});
+
+// forgot password: step 2 — verify the OTP and set a new password
+app.post('/api/reset', (req, res) => {
+  const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
+  const rec = user && otps[user.srn];
+  if (!rec) return res.status(400).json({ error: 'Request an OTP first' });
+  if (Date.now() > rec.expires) { delete otps[user.srn]; return res.status(400).json({ error: 'OTP expired — request a new one' }); }
+  if (rec.tries >= 5) { delete otps[user.srn]; return res.status(400).json({ error: 'Too many wrong attempts — request a new OTP' }); }
+  if (String(req.body.otp || '').trim() !== rec.code) {
+    rec.tries++;
+    return res.status(400).json({ error: 'Wrong OTP' });
+  }
+  const { password } = req.body;
+  if (!password || password.length < 4)
+    return res.status(400).json({ error: 'New password must be at least 4 characters' });
+  if (!pwChangeAllowed(user))
+    return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
+  setPassword(user, password);
+  delete otps[user.srn];
+  logEvent('password_reset', `${user.name} (${user.srn}) reset their password via OTP`);
+  save();
+  res.json({ ok: true });
 });
 
 // ---------- me / profile ----------
@@ -296,7 +383,7 @@ app.get('/api/me', auth, (req, res) => {
         })
     : [];
   res.json({
-    user: { ...publicUser(me), cgpa: me.cgpa },
+    user: { ...publicUser(me), cgpa: me.cgpa, email: me.email || '' },
     team: team ? teamView(team, me) : null,
     incoming,
     outgoing,
@@ -334,15 +421,21 @@ app.post('/api/profile', auth, (req, res) => {
 
   const wa = normWa(req.body.whatsapp);
   if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (email && !isEmail(email)) return res.status(400).json({ error: 'Enter a valid email' });
+  if (password && !pwChangeAllowed(req.user))
+    return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
 
   req.user.name = name.trim();
   req.user.gender = gender;
   req.user.branch = branch;
   req.user.cgpa = c;
   req.user.whatsapp = wa;
+  if (email) req.user.email = email;
   if (password) {
-    req.user.salt = crypto.randomBytes(8).toString('hex');
-    req.user.pwHash = hashPw(password, req.user.salt);
+    const current = req.user.token;
+    setPassword(req.user, password);
+    req.user.token = current; // changing your own password shouldn't log this session out
   }
   save();
   res.json({ ok: true });
