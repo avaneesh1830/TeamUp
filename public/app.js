@@ -32,7 +32,7 @@ let me = null; // { user, team, incoming, outgoing }
 let teams = [];
 let professors = [];
 let activeTab = 'browse'; // browse | students | team | requests | profile
-let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
+let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL', showFull: false, canJoin: false };
 let mentorQuery = '';
 let studentQuery = '';
 let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
@@ -274,10 +274,16 @@ function browseHtml() {
 
   // domain options come from the teams that actually exist
   const domainOpts = [...new Set(teams.flatMap((t) => t.domains))].sort();
-  const anyFilter = filters.branch !== 'ALL' || filters.domain !== 'ALL' || filters.grade !== 'ALL' || filters.gender !== 'ALL';
+  const anyFilter =
+    filters.branch !== 'ALL' || filters.domain !== 'ALL' || filters.grade !== 'ALL' ||
+    filters.gender !== 'ALL' || filters.showFull || filters.canJoin;
 
   const visible = teams.filter(
     (t) =>
+      // full teams are hidden unless "Show full teams" is on
+      (filters.showFull || t.slots.remaining > 0) &&
+      // "Teams I can join": passes every rule for me
+      (!filters.canJoin || t.joinBlock === null) &&
       (filters.branch === 'ALL' || t.branch === filters.branch) &&
       (filters.domain === 'ALL' || t.domains.includes(filters.domain)) &&
       (filters.grade === 'ALL' || t.slots.openGrades.includes(filters.grade)) &&
@@ -304,6 +310,8 @@ function browseHtml() {
       <option value="M" ${filters.gender === 'M' ? 'selected' : ''}>Male can join</option>
       <option value="F" ${filters.gender === 'F' ? 'selected' : ''}>Female can join</option>
     </select>
+    ${!me.team ? `<button id="bCanJoin" class="chip ${filters.canJoin ? 'active' : ''}" type="button">Eligible to join</button>` : ''}
+    <button id="bShowFull" class="chip ${filters.showFull ? 'active' : ''}" type="button">Show full teams</button>
     ${anyFilter ? `<button id="clearFilters" class="btn small ghost" type="button">✕ Clear</button>` : ''}
     <span class="count">${visible.length} of ${teams.length} team${teams.length === 1 ? '' : 's'}</span>
   </div>`;
@@ -756,9 +764,13 @@ function bindActions() {
   const clearBtn = $('clearFilters');
   if (clearBtn)
     clearBtn.onclick = () => {
-      filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL' };
+      filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL', showFull: false, canJoin: false };
       render();
     };
+  const bCanJoin = $('bCanJoin');
+  if (bCanJoin) bCanJoin.onclick = () => { filters.canJoin = !filters.canJoin; render(); };
+  const bShowFull = $('bShowFull');
+  if (bShowFull) bShowFull.onclick = () => { filters.showFull = !filters.showFull; render(); };
 
   // create team: multi-select domain chips (max 3)
   document.querySelectorAll('[data-tdomain]').forEach((b) => {
