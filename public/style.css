@@ -774,7 +774,11 @@ footer p:first-child {
 .intro-text { font-size: 0.95rem; line-height: 1.7; margin-bottom: 10px; color: var(--on-surface); }
 .intro-text.hint { font-size: 0.82rem; color: var(--on-surface-variant); }
 
-.combo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.intro-list { margin: 0 0 10px 20px; display: grid; gap: 7px; }
+.intro-list li { font-size: 0.9rem; line-height: 1.6; }
+.intro-card a { color: var(--primary); font-weight: 600; word-break: break-all; }
+
+.combo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
 .combo-box { border-radius: 14px; padding: 14px 16px; }
 .combo-box.ok { background: var(--success-container); }
 .combo-box.no { background: var(--error-container); }
