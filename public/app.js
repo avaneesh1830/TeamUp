@@ -35,6 +35,8 @@ let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', showFull: false, canJoin: false };
 let mentorQuery = '';
 let studentQuery = '';
+let mentorList = []; // official mentor directory (faculty-domains sheet)
+let mFilters = { q: '', domain: 'ALL' }; // mentors tab filters
 let sFilters = { branch: 'ALL', gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
 
 async function api(path, method = 'GET', body) {
@@ -95,6 +97,7 @@ function switchAuthTab(login) {
   $('loginForm').classList.toggle('hidden', !login);
   $('registerForm').classList.toggle('hidden', login);
   $('forgotForm').classList.add('hidden');
+  $('regOtpForm').classList.add('hidden');
   $('authError').textContent = '';
 }
 
@@ -112,11 +115,12 @@ $('forgotForm').onsubmit = async (e) => {
   const step2 = !$('fpStep2').classList.contains('hidden');
   try {
     if (!step2) {
-      const r = await api('/forgot', 'POST', { srn: $('fpSrn').value });
+      await api('/forgot', 'POST', { srn: $('fpSrn').value });
       $('fpStep2').classList.remove('hidden');
       $('fpBtn').textContent = 'Verify OTP & change password';
       $('authError').textContent = '';
-      toast(`OTP sent to ${r.email} — valid for 10 minutes`, 'ok');
+      // deliberately generic — never reveals whether the account exists
+      toast('If that account exists, an OTP has been sent to its email (valid 10 minutes)', 'ok');
       $('fpOtp').focus();
     } else {
       await api('/reset', 'POST', { srn: $('fpSrn').value, otp: $('fpOtp').value, password: $('fpPw').value });
@@ -147,8 +151,25 @@ $('registerForm').onsubmit = async (e) => {
       whatsapp: $('regWa').value,
       password: $('regPw').value,
     });
+    // account is created only after the email OTP checks out
+    $('registerForm').classList.add('hidden');
+    $('regOtpForm').classList.remove('hidden');
+    $('regOtpHint').textContent = `Enter the OTP sent to ${r.email} to confirm your registration (valid 10 minutes).`;
+    $('authError').textContent = '';
+    $('regOtp').focus();
+  } catch (err) { $('authError').textContent = err.message; }
+};
+
+$('regOtpForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api('/register/verify', 'POST', { srn: $('regSrn').value, otp: $('regOtp').value });
     setToken(r.token);
   } catch (err) { $('authError').textContent = err.message; }
+};
+$('regOtpBack').onclick = () => {
+  $('regOtpForm').classList.add('hidden');
+  $('registerForm').classList.remove('hidden');
 };
 
 function setToken(t) {
@@ -230,7 +251,7 @@ function showProfile(srn) {
       ${t ? `<span class="badge taken">In team · ${esc(t.domains.join(' / '))}</span>` : '<span class="badge free">Looking for a team</span>'}
     </div>
     <div class="slot-row" style="margin-bottom:12px">
-      ${m.whatsapp ? `<a class="wa-chip sm" href="https://wa.me/${esc(m.whatsapp)}" target="_blank" rel="noopener">💬 +${esc(m.whatsapp)}</a>` : ''}
+      ${m.whatsapp ? `<a class="wa-chip sm" href="https://wa.me/91${esc(m.whatsapp)}" target="_blank" rel="noopener">💬 ${esc(m.whatsapp)}</a>` : ''}
       ${m.github ? `<a class="gh-chip sm" href="${esc(m.github)}" target="_blank" rel="noopener">🐙 GitHub</a>` : ''}
     </div>
     ${m.domains.length ? `<h3>Interested domains</h3><div class="slot-row">${m.domains.map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>` : ''}
@@ -322,10 +343,11 @@ function render() {
     badge.classList.remove('hidden');
   } else badge.classList.add('hidden');
 
-  const views = { browse: browseHtml, students: studentsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml, rules: rulesHtml };
+  const views = { browse: browseHtml, students: studentsHtml, mentors: mentorsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml, rules: rulesHtml };
   $('content').innerHTML = views[activeTab]();
   bindActions();
   if (activeTab === 'students') searchStudents(); // directory loads immediately
+  if (activeTab === 'mentors') renderMentors();
 }
 
 // ---------- tab: browse teams ----------
@@ -476,7 +498,7 @@ function studentResultsHtml(list) {
         ? `<div class="interest-row">🎯 ${s.domains.map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>`
         : '';
       const waChip = s.whatsapp
-        ? `<a class="wa-chip sm" href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">💬 +${esc(s.whatsapp)}</a>`
+        ? `<a class="wa-chip sm" href="https://wa.me/91${esc(s.whatsapp)}" target="_blank" rel="noopener">💬 ${esc(s.whatsapp)}</a>`
         : `<span class="srn" style="font-size:0.75rem">no number shared</span>`;
       const isMe = s.srn === me.user.srn;
       return `<div class="student-row">
@@ -654,7 +676,7 @@ function requestsHtml() {
               ${r.candidateTeam ? `<p class="join-note">ℹ️ Already joined team "${esc(r.candidateTeam)}" — request stays here in case they leave it</p>` : ''}
             </div>
             <div class="req-actions">
-              ${r.whatsapp ? `<a class="wa-chip" href="https://wa.me/${esc(r.whatsapp)}" target="_blank" rel="noopener" title="+${esc(r.whatsapp)}">💬 WhatsApp</a>` : ''}
+              ${r.whatsapp ? `<a class="wa-chip" href="https://wa.me/91${esc(r.whatsapp)}" target="_blank" rel="noopener" title="${esc(r.whatsapp)}">💬 WhatsApp</a>` : ''}
               <button class="btn small success" data-accept="${r.id}" ${r.candidateTeam ? 'disabled title="Currently in another team"' : ''} type="button">Accept</button>
               <button class="btn small danger" data-reject="${r.id}" type="button">Reject</button>
             </div>
@@ -685,6 +707,73 @@ function requestsHtml() {
   }
   html += `</div>`;
   return html;
+}
+
+// ---------- tab: mentors (official faculty-domains sheet) ----------
+// dropdown options: common expertise keywords mined from the sheet itself
+function mentorDomainOptions() {
+  const counts = {};
+  mentorList.forEach((m) =>
+    (m.expertise || []).join(',').split(/[,/+\n]/).forEach((p) => {
+      const t = p.trim();
+      if (t.length >= 3 && t.length <= 45) counts[t.toLowerCase()] = counts[t.toLowerCase()] || { n: 0, label: t };
+      if (counts[t.toLowerCase()]) counts[t.toLowerCase()].n++;
+    })
+  );
+  return Object.values(counts)
+    .filter((x) => x.n >= 2)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 30)
+    .map((x) => x.label)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function mentorsHtml() {
+  const opts = mentorDomainOptions();
+  return `<div class="section-head fade-up">
+    <div><h2>Mentors</h2><p>Faculty guides with their domain expertise — from the official sheet. Mail the ones matching your team's interests.</p></div>
+  </div>
+  <div class="card filter-bar fade-up">
+    <span class="lbl">Filter by domain</span>
+    <input id="mQ" style="flex:1;min-width:180px;margin-top:0;width:auto" placeholder="🔎 Type a domain, e.g. blockchain…" value="${esc(mFilters.q)}" autocomplete="off" />
+    <select id="mDomain">
+      <option value="ALL">All domains</option>
+      ${opts.map((d) => `<option value="${esc(d)}" ${mFilters.domain === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+    </select>
+    <span id="mentorCount" class="count"></span>
+  </div>
+  <div id="mentorResults"></div>`;
+}
+
+function renderMentors() {
+  const box = $('mentorResults');
+  if (!box) return;
+  const q = mFilters.q.trim().toLowerCase();
+  const sel = mFilters.domain === 'ALL' ? '' : mFilters.domain.toLowerCase();
+  const list = mentorList.filter((m) => {
+    const hay = ((m.expertise || []).join(' ') + ' ' + m.name).toLowerCase();
+    return (!q || hay.includes(q)) && (!sel || hay.includes(sel));
+  });
+  const counter = $('mentorCount');
+  if (counter) counter.textContent = `${list.length} of ${mentorList.length} mentors`;
+  box.innerHTML = list.length
+    ? `<div class="team-grid">${list
+        .map(
+          (m, i) => `<div class="card hoverable" style="animation-delay:${Math.min(i * 40, 300)}ms">
+        <div class="mentor-row">
+          ${profPhoto(m, 'lg')}
+          <div style="flex:1">
+            <div class="mentor-name">${esc(m.name)}</div>
+            <div class="mentor-sub">${esc(m.designation || 'Faculty')}</div>
+          </div>
+        </div>
+        ${m.email ? `<div class="slot-row" style="margin-top:10px"><a class="gh-chip sm" href="mailto:${esc(m.email)}">✉️ ${esc(m.email)}</a></div>` : ''}
+        <h3>Domain expertise</h3>
+        <div class="slot-row">${(m.expertise || []).map((d) => `<span class="badge domain">${esc(d)}</span>`).join(' ')}</div>
+      </div>`
+        )
+        .join('')}</div>`
+    : `<div class="card"><div class="empty"><span class="big">🧑‍🏫</span>No mentor matches that domain.</div></div>`;
 }
 
 // ---------- tab: rules & info (same content as the welcome page) ----------
@@ -721,7 +810,7 @@ function profileHtml() {
       </div>
       <div class="row2">
         <label>CGPA <input id="editCgpa" type="number" step="0.01" min="0" max="10" required value="${u.cgpa}" /></label>
-        <label>WhatsApp number <input id="editWa" inputmode="tel" maxlength="16" value="${esc(u.whatsapp)}" placeholder="Shown to classmates" /></label>
+        <label>WhatsApp number <input id="editWa" inputmode="tel" maxlength="10" value="${esc(u.whatsapp)}" placeholder="Shown to classmates" /></label>
       </div>
       <div class="row2">
         <label>Email <input id="editEmail" type="email" value="${esc(u.email || '')}" placeholder="For password reset OTPs" /></label>
@@ -806,6 +895,12 @@ function bindActions() {
     const el = $(id);
     if (el) el.onchange = () => { sFilters[key] = el.value; searchStudents(); };
   };
+  // mentors tab filters
+  const mQ = $('mQ');
+  if (mQ) mQ.oninput = () => { mFilters.q = mQ.value; renderMentors(); };
+  const mDomain = $('mDomain');
+  if (mDomain) mDomain.onchange = () => { mFilters.domain = mDomain.value; renderMentors(); };
+
   bindSFilter('sfBranch', 'branch');
   bindSFilter('sfGender', 'gender');
   bindSFilter('sfGrade', 'grade');
@@ -1108,6 +1203,7 @@ async function refresh() {
   if (!token) return showAuth();
   try {
     if (professors.length === 0) professors = await api('/professors').catch(() => []);
+    if (mentorList.length === 0) mentorList = await api('/mentors').catch(() => []);
     [me, teams] = await Promise.all([api('/me'), api('/teams')]);
     // don't wipe the page while the user is typing in a form
     const el = document.activeElement;

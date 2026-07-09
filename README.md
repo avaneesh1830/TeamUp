@@ -127,9 +127,10 @@ Any machine with Docker can run it without cloning the repo:
 docker run -d -p 3000:3000 -v teamup-data:/data --name teamup avaneesharoor/teamup
 ```
 
-## Password reset emails (OTP)
+## Email OTPs (registration + password reset)
 
-Forgot-password OTPs are emailed via SMTP. Set these env vars to enable real mail
+Registration is confirmed by an OTP sent to the student's email, and
+forgot-password works the same way. OTPs are emailed via SMTP. Set these env vars to enable real mail
 (e.g. a Gmail address with an [app password](https://myaccount.google.com/apppasswords)):
 
 ```bash

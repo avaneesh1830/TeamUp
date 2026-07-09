@@ -25,6 +25,11 @@ db.users.forEach((u) => {
   if (u.bio === undefined) u.bio = ''; // personal "what I've worked on"
   if (u.email === undefined) u.email = '';
   if (!u.pwChanges) u.pwChanges = []; // timestamps, for the 3-changes-per-day limit
+  // numbers are now stored as plain 10 digits (no country code)
+  if (u.whatsapp && u.whatsapp.length === 12 && u.whatsapp.startsWith('91')) u.whatsapp = u.whatsapp.slice(2);
+});
+(db.requests || []).forEach((r) => {
+  if (r.whatsapp && r.whatsapp.length === 12 && r.whatsapp.startsWith('91')) r.whatsapp = r.whatsapp.slice(2);
 });
 db.teams.forEach((t) => {
   if (t.mentor === undefined) t.mentor = null;
@@ -62,6 +67,12 @@ const PROF_FILE = path.join(__dirname, 'professors.json');
 let professors = [];
 if (fs.existsSync(PROF_FILE)) {
   professors = JSON.parse(fs.readFileSync(PROF_FILE, 'utf8'));
+}
+// official mentor list (from the shared faculty-domains sheet)
+const MENTOR_FILE = path.join(__dirname, 'mentors.json');
+let mentors = [];
+if (fs.existsSync(MENTOR_FILE)) {
+  mentors = JSON.parse(fs.readFileSync(MENTOR_FILE, 'utf8'));
 }
 
 // ---------- helpers ----------
@@ -125,7 +136,8 @@ async function sendOtpMail(to, code) {
     text: `Your TeamUp password reset OTP is: ${code}\n\nIt expires in 10 minutes. If you didn't request this, just ignore this email.`,
   });
 }
-const otps = {}; // srn -> { code, expires, tries }
+const otps = {}; // srn -> { code, expires, tries }  (password resets)
+const pendingRegs = {}; // srn -> { user, code, expires, tries }  (registrations awaiting email OTP)
 const maskEmail = (e) => e.replace(/^(.).*(@.*)$/, '$1•••$2');
 
 // password changes (any method) limited to 3 per day
@@ -141,12 +153,12 @@ function setPassword(u, password) {
   u.pwChanges.push(Date.now());
 }
 
-// normalize a WhatsApp number: '' if empty, null if invalid, else digits with country code
+// normalize a WhatsApp number: '' if empty, null if invalid, else exactly 10 digits
 function normWa(x) {
   let wa = String(x || '').replace(/\D/g, '');
   if (!wa) return '';
-  if (wa.length === 10) wa = '91' + wa; // assume India if no country code
-  if (wa.length < 11 || wa.length > 15) return null;
+  if (wa.length === 12 && wa.startsWith('91')) wa = wa.slice(2); // tolerate pasted +91 numbers
+  if (wa.length !== 10) return null;
   return wa;
 }
 
@@ -241,7 +253,7 @@ function teamView(team, viewer) {
     members: team.members.map((srn) => publicUser(userBySrn(srn))),
     slots: s,
     requested: !!myReq,
-    joinBlock: viewer ? (teamOf(viewer.srn) ? 'Already in a team' : joinBlock(team, viewer)) : null,
+    joinBlock: viewer ? (teamOf(viewer.srn) ? 'You are already in a team' : joinBlock(team, viewer)) : null,
   };
 }
 
@@ -262,7 +274,7 @@ app.post('/api/register', (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!isEmail(email)) return res.status(400).json({ error: 'Enter a valid email — you need it to reset your password' });
   const wa = normWa(req.body.whatsapp);
-  if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+  if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   const salt = crypto.randomBytes(8).toString('hex');
   const user = {
     srn: id,
@@ -280,10 +292,30 @@ app.post('/api/register', (req, res) => {
     pwHash: hashPw(password, salt),
     token: crypto.randomUUID(),
   };
-  db.users.push(user);
-  logEvent('account_created', `${user.name} (${user.srn}, ${branch}) registered`);
+  // account is only created after the email OTP is verified
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  pendingRegs[id] = { user, code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
+  sendOtpMail(email, code).catch((e) => console.error('OTP mail failed:', e.message));
+  res.json({ otp: true, email: maskEmail(email) });
+});
+
+// registration step 2 — verify the OTP, then create the account
+app.post('/api/register/verify', (req, res) => {
+  const srn = String(req.body.srn || '').trim().toUpperCase();
+  const rec = pendingRegs[srn];
+  if (!rec) return res.status(400).json({ error: 'Start the registration again' });
+  if (Date.now() > rec.expires) { delete pendingRegs[srn]; return res.status(400).json({ error: 'OTP expired — register again' }); }
+  if (rec.tries >= 5) { delete pendingRegs[srn]; return res.status(400).json({ error: 'Too many wrong attempts — register again' }); }
+  if (String(req.body.otp || '').trim() !== rec.code) {
+    rec.tries++;
+    return res.status(400).json({ error: 'Wrong OTP' });
+  }
+  if (userBySrn(srn)) { delete pendingRegs[srn]; return res.status(400).json({ error: 'This SRN is already registered' }); }
+  db.users.push(rec.user);
+  delete pendingRegs[srn];
+  logEvent('account_created', `${rec.user.name} (${rec.user.srn}, ${rec.user.branch}) registered (email verified)`);
   save();
-  res.json({ token: user.token });
+  res.json({ token: rec.user.token });
 });
 
 app.post('/api/login', (req, res) => {
@@ -296,19 +328,18 @@ app.post('/api/login', (req, res) => {
   res.json({ token: user.token });
 });
 
-// forgot password: step 1 — send an OTP to the account's email
+// forgot password: step 1 — send an OTP to the account's email.
+// Response is ALWAYS the same generic OK so nobody can probe which accounts exist
+// (existence is only confirmed once the OTP from the email is verified).
 app.post('/api/forgot', (req, res) => {
   const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
-  if (!user) return res.status(404).json({ error: 'No account with that SRN' });
-  if (!user.email)
-    return res.status(400).json({ error: 'No email on this account — add one from My Profile while logged in' });
-  if (!pwChangeAllowed(user))
-    return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
-  const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
-  otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
-  sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
-  logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
-  res.json({ ok: true, email: maskEmail(user.email) });
+  if (user && user.email && pwChangeAllowed(user)) {
+    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+    otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
+    sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
+    logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
+  }
+  res.json({ ok: true });
 });
 
 // forgot password: step 2 — verify the OTP and set a new password
@@ -420,7 +451,7 @@ app.post('/api/profile', auth, (req, res) => {
   }
 
   const wa = normWa(req.body.whatsapp);
-  if (wa === null) return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+  if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   const email = String(req.body.email || '').trim().toLowerCase();
   if (email && !isEmail(email)) return res.status(400).json({ error: 'Enter a valid email' });
   if (password && !pwChangeAllowed(req.user))
@@ -513,6 +544,11 @@ app.get('/api/professors', auth, (req, res) => {
   res.json(professors);
 });
 
+// mentor directory from the official faculty-domains sheet
+app.get('/api/mentors', auth, (req, res) => {
+  res.json(mentors);
+});
+
 // ---------- student directory (all students, alphabetical, filterable) ----------
 app.get('/api/students', auth, (req, res) => {
   const q = (req.query.q || '').trim().toLowerCase();
@@ -547,7 +583,7 @@ app.get('/api/students', auth, (req, res) => {
       }
       // if the student is in a team, say whether the searcher could join that team
       if (t && !t.members.includes(req.user.srn)) {
-        out.team.joinBlock = myTeam ? 'Already in a team' : joinBlock(t, req.user);
+        out.team.joinBlock = myTeam ? 'You are already in a team' : joinBlock(t, req.user);
         out.team.requested = !!db.requests.find(
           (r) => r.teamId === t.id && r.srn === req.user.srn && r.status === 'pending'
         );
@@ -649,7 +685,7 @@ app.post('/api/teams/:id/join', auth, (req, res) => {
   // optional WhatsApp number so the leader can chat before accepting
   const wa = normWa(req.body.whatsapp);
   if (wa === null)
-    return res.status(400).json({ error: 'Enter a valid WhatsApp number (10 digits, or with country code)' });
+    return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   db.requests.push({
     id: crypto.randomUUID(),
     teamId: team.id,

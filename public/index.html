@@ -72,7 +72,7 @@
       <ul class="intro-list">
         <li>You may choose <strong>any domain and problem statement</strong> based on your team's interest.</li>
         <li>A list of faculty members and their domains is shared —
-          <a href="https://docs.google.com/spreadsheets/d/1QrH5p2buHSSFSBXGZ4_ZYLsKlDORG8m85LAp55HanI/edit?usp=sharing" target="_blank" rel="noopener">faculty domains sheet</a> —
+          <a href="https://docs.google.com/spreadsheets/d/1QrH5p2buHSSFSBXGZ4_ZYLsKlDORG8m85LAp55Han-I/edit?usp=sharing" target="_blank" rel="noopener">faculty domains sheet</a> —
           and you can connect with mentors right here on TeamUp who align with your domain and academic interests.</li>
         <li>Talk to faculty in the department with interests matching your team, and discuss problem statements over mail — they will give inputs and suggestions.</li>
         <li>After discussion with faculty, each batch <strong>proposes a guide</strong>.</li>
@@ -179,9 +179,16 @@
         <label>CGPA <input id="regCgpa" type="number" step="0.01" min="0" max="10" required placeholder="e.g. 8.25" /></label>
         <p class="hint">A grade = 8+ · B = 7–8 · C = below 7. Others only see your grade letter, never your CGPA.</p>
         <label>Email <input id="regEmail" type="email" required placeholder="Used for password reset OTPs" /></label>
-        <label>WhatsApp number (optional) <input id="regWa" inputmode="tel" maxlength="16" placeholder="So teammates can reach you" /></label>
+        <label>WhatsApp number (optional) <input id="regWa" inputmode="tel" maxlength="10" placeholder="10-digit number — so teammates can reach you" /></label>
         <label>Password <input id="regPw" type="password" minlength="4" required /></label>
         <button class="btn primary full" type="submit">Create account</button>
+      </form>
+
+      <form id="regOtpForm" class="hidden">
+        <p class="hint" id="regOtpHint">Enter the OTP sent to your email to confirm your registration.</p>
+        <label>OTP <input id="regOtp" inputmode="numeric" maxlength="6" required placeholder="6-digit code" /></label>
+        <button class="btn primary full" type="submit">Verify &amp; create account</button>
+        <button id="regOtpBack" class="btn ghost full" type="button" style="margin-top:8px">← Back</button>
       </form>
 
       <p id="authError" class="error"></p>
@@ -206,6 +213,7 @@
     <nav class="main-tabs">
       <button class="mtab active" data-tab="browse" type="button">Browse Teams</button>
       <button class="mtab" data-tab="students" type="button">Students</button>
+      <button class="mtab" data-tab="mentors" type="button">Mentors</button>
       <button class="mtab" data-tab="team" type="button">My Team</button>
       <button class="mtab" data-tab="requests" type="button">Requests <span id="reqBadge" class="notif hidden"></span></button>
       <button class="mtab" data-tab="profile" type="button">My Profile</button>
@@ -226,7 +234,7 @@
       <h2>Send join request</h2>
       <p class="hint">Share your WhatsApp number (optional) so the team leader can chat with you before accepting — if the vibes match, you're in 🤝</p>
       <label>WhatsApp number
-        <input id="waInput" inputmode="tel" maxlength="16" placeholder="10 digits, or with country code" />
+        <input id="waInput" inputmode="tel" maxlength="10" placeholder="10-digit number" />
       </label>
       <div class="modal-actions">
         <button id="waCancel" class="btn ghost" type="button">Cancel</button>

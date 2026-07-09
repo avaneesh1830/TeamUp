@@ -1,0 +1,649 @@
+[
+  {
+    "name": "Dr.Sandesh BJ",
+    "designation": "Chairperson-CSE/Professor",
+    "email": "sandesh_bj@pes.edu",
+    "expertise": [
+      "Computer Vision"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210615110838000686.jpg"
+  },
+  {
+    "name": "Dr. Arti Arya",
+    "designation": "Professor/Chairperson- AI&ML",
+    "email": "artiarya@pes.edu",
+    "expertise": [
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Natural Language Processing",
+      "GenAI, Agentic AI, LLM,ML/DL,BDA,Parallel computing,Algorithms(Optimization Techniques), GNNs, Knowledge Graphs and Ontologies ,Graph Neural Networks"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113626192596_Arti_Arya.jpg"
+  },
+  {
+    "name": "Dr Pooja Agarwal",
+    "designation": "Professor",
+    "email": "poojaagarwal@pes.edu",
+    "expertise": [
+      "Artificial Intelligence/Gen AI/Explainable AI/ Machine Learning/ Deep Learning, RL, XAI, Data Analytics/ Natural Language Processing",
+      "Natural Language Processing",
+      "Computer Vision",
+      "GenAI, LLM, ML, DL, Optimization Techniques, Image/Video Processing, Knowledge Graphs and Ontologies, Graph Neural Networks"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920111907588323_Pooja_Agarwal.jpg"
+  },
+  {
+    "name": "Dr.M.Farida Begam",
+    "designation": "Professor",
+    "email": "farida.begam@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Natural Language Processing",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Knowledge graphs , Ontologies, Deep Learning, Computer vision, System and Architecture/Parallel Computing/ Compiler Optimization"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr.Sharavana.K",
+    "designation": "Professor",
+    "email": "sharavana.kk@pes.edu",
+    "expertise": [
+      "HPC and Cloud Computing",
+      "Computer Networks, Distributed Computing, IoT and Wireless Sensor Networks",
+      "Data Analytics and Big data Analytics",
+      "Augmented Reality (AR), Virtual Reality (VR), Extended Reality (XR), Digital Twin Technologies, and Quantum Computing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104132139605824_New_Project.jpg"
+  },
+  {
+    "name": "Dr. Gokul Kannan Sadasivam",
+    "designation": "Professor",
+    "email": "gokul@pes.edu",
+    "expertise": [
+      "Cyber Security + AI (Data Analytics, Machine Learning, Deep Learning, Explainable AI, Gen AI)",
+      "Automotive Security, Drone Security, Hardware Security, Side Channel Attacks",
+      "Robotics, Reinforcement Learning, Drone, Internet of Things"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220729081913000353.jpg"
+  },
+  {
+    "name": "Dr.Manju",
+    "designation": "Professor",
+    "email": "manju.nunia@pes.edu",
+    "expertise": [
+      "IoT and Wireless Sensor Networks,ML",
+      "Distributed Computing",
+      "Cloud computing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250305125327976298_manju.jpg"
+  },
+  {
+    "name": "Dr.Vinodha K",
+    "designation": "Professor",
+    "email": "vinodhak@pes.edu",
+    "expertise": [
+      "Cyber security",
+      "Computer Networks",
+      "Machine Intelligence",
+      "System and Architecture, Bio-inspired computing,Integrating AI/ML with IoT and Blockchain, Wireless sensor networks, Network security"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113853300571_Vinodha_K.jpg"
+  },
+  {
+    "name": "Dr. Vishnu S Tiwari",
+    "designation": "Professor",
+    "email": "vishnustiwari@pes.edu",
+    "expertise": [
+      "Financial Engineering, Portfolio Optimization/Construction, High Frequency Trading",
+      "Spatial Databases, Spatial Data Analytics & Machine Learning, Recommendation Systems",
+      "Software Architecture, Software System Design, Large Scale Software Development, Scalable Systems",
+      "Geographicl Information Systems, Automatation, Formal Verification, Language Processing"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Prof.Siba Ram",
+    "designation": "",
+    "email": "",
+    "expertise": [],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142954655007.jpg"
+  },
+  {
+    "name": "Dr.Ashwini",
+    "designation": "Professor",
+    "email": "",
+    "expertise": [],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142857378959.jpg"
+  },
+  {
+    "name": "Dr.Sudeepa Roy",
+    "designation": "Associate Prof.",
+    "email": "sudeepar@pes.edu",
+    "expertise": [
+      "AI in Heathcare"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105128318892_Sudeepa_Roy_Dey.jpg"
+  },
+  {
+    "name": "Dr.Prajwala TR",
+    "designation": "Associate Prof.",
+    "email": "prajwalatr@pes.edu",
+    "expertise": [
+      "Data Analytics and Big data Analytics",
+      "Machine Learning",
+      "Computer Vision",
+      "system and core computing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113010334328_Prajwala_T_R.jpg"
+  },
+  {
+    "name": "Dr.Vandana M L",
+    "designation": "Associate Prof.",
+    "email": "vandanamd@pes.edu",
+    "expertise": [
+      "Machine Learning/Deep Learning",
+      "Computer Vision",
+      "Cognitive computing",
+      "Artificial Intelligence/Gen AI/Explainable AI/Signal processing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062435492394_Vandana_M_Ladwani.jpg"
+  },
+  {
+    "name": "Dr.Animesh Giri",
+    "designation": "Associate Prof.",
+    "email": "animeshgiri@pes.edu",
+    "expertise": [
+      "Big Data , Cyber security + LLM , BlockChain , AI Agents, SOC , Cloud Computing",
+      "Data Analytics and Big data Analytics",
+      "IoT and Wireless Sensor Networks",
+      "ML,NLP, Blockchain, Computer Networks , Cloud Computing Distributed & Parallel Computing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062645765137_Animesh_Giri.jpg"
+  },
+  {
+    "name": "Dr. Chandrashekhar P Chavan",
+    "designation": "Associate Prof.",
+    "email": "cpchavan@pes.edu",
+    "expertise": [
+      "Security in IoT, Wireless Sensor Networks, Agentic AI",
+      "Computer Networks, Distributed Computing",
+      "Cloud Computing, Big Data, Machine Learning",
+      "Quantum Computing, Network security, Massive parallel computing, Block chain, Edge computing, Data Analytics and GenAI"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921065504695350_Dr._Chandrashekhar_P_Chavan.jpg"
+  },
+  {
+    "name": "Dr. Geetha Dayalan",
+    "designation": "Associate Prof.",
+    "email": "geethadayalan@pes.edu",
+    "expertise": [
+      "AI&ML Driven Cyber Security, GenAI for Cyber Security, Agentic AI for Cybersecurity, SOC Analytics",
+      "XAI for Threat Predictive Analytics and Decision Support, Threat Intelligence& Threat Hunting",
+      "Applications of ML in Computer Networks, Intrusion Detection, IoT Security, Blockchain and Cloud Security",
+      "Quantum Computing, Edge Computing, MANET, VANET, V2V, Wireless Sensor Netwroks"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921060932209849_Dr._Geetha_D.jpg"
+  },
+  {
+    "name": "Dr. Divyaprabha K N",
+    "designation": "Associate Prof.",
+    "email": "divyaprabha@pes.edu",
+    "expertise": [
+      "System and Architecture/Parallel Computing/ Compiler Optimization",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Deep Learning"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220107071343000883.jpg"
+  },
+  {
+    "name": "Dr.Saritha",
+    "designation": "Associate Prof.",
+    "email": "saritha.k@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Cloud Computing",
+      "IoT and Wireless Sensor Networks"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113220821269_Saritha.jpg"
+  },
+  {
+    "name": "Dr. R. Prema",
+    "designation": "Associate Prof.",
+    "email": "prema.r@pes.edu",
+    "expertise": [
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Natural Language Processing",
+      "Computer Vision"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr. Swati Pratap Jagdale",
+    "designation": "Associate Prof.",
+    "email": "swatigambhire@pes.edu",
+    "expertise": [
+      "AI for Sustainability",
+      "Machine learning, Data analytics",
+      "Knowledge Graph /Ontologies"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105245511901_Swati_Pratap_Jagdale.jpg"
+  },
+  {
+    "name": "Dr.Gauri Sameer Rapate",
+    "designation": "Associate Prof.",
+    "email": "farida.begam@pes.edu",
+    "expertise": [
+      "IoT and Wireless Sensor Networks",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Cyber security"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070542694208_Gauri_Sameer_Rapate.jpg"
+  },
+  {
+    "name": "Dr.Nazmin Begum",
+    "designation": "Associate Prof.",
+    "email": "nazmin.b@pes.edu",
+    "expertise": [
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Computer Vision",
+      "Natural Language Processing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220816073651000224.jpg"
+  },
+  {
+    "name": "Dr.Vaishali Shinde",
+    "designation": "Associate Prof.",
+    "email": "vaishali.ds@pes.edu",
+    "expertise": [
+      "Machine Learning,deep learning,computer vision",
+      "Deep Learning",
+      "Data Analytics and Big data Analytics"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114527821970_New_Project_2.jpg"
+  },
+  {
+    "name": "Dr.P KOKILA",
+    "designation": "Associate Prof.",
+    "email": "pkokila@pes.edu",
+    "expertise": [
+      "Artificial Intelligence(ML, DL, RL)/Gen AI, Computer Vision",
+      "XAI, NLP",
+      "Cloud computing, IOT"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr.P.Kavitha",
+    "designation": "Associate Prof.",
+    "email": "pkavitha@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Wireless Security",
+      "Deep Learning / XAI",
+      "Data Science"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr. S. Pradeep Kumar Kenny",
+    "designation": "Associate Prof.",
+    "email": "kenny_isles@pes.edu",
+    "expertise": [
+      "Image Processing",
+      "IOT",
+      "GenAI"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr. Richa Sharma",
+    "designation": "Associate Prof.",
+    "email": "richasharma@pes.edu",
+    "expertise": [
+      "Natural Language Processing",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Computer Vision"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104134411620925_staff041124.jpg"
+  },
+  {
+    "name": "Dr. Gamini Joshi",
+    "designation": "Associate Prof.",
+    "email": "joshi.gamini@gmail.com",
+    "expertise": [
+      "IoT and Wireless Sensor Networks",
+      "IoT security",
+      "Machine Learning",
+      "AI and Computer networks"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251016102244341630_New_Project_1.jpg"
+  },
+  {
+    "name": "Dr. Monika",
+    "designation": "Associate Prof.",
+    "email": "monika.goyal@pes.edu",
+    "expertise": [
+      "Deep learning/Machine Learning",
+      "Computer Vision",
+      "AI in Healthcare, Medical Image processing",
+      "GenAI, LLM, ML, DL, Optimization Techniques, Image/Video Processing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250116144501694037_Monika_PES.jpg"
+  },
+  {
+    "name": "Dr. Nivedita Kasturi",
+    "designation": "Associate Prof.",
+    "email": "niveditak@pes.edu",
+    "expertise": [
+      "Social network analytics and Data Analytics for AgriTech",
+      "Machine Learning ,Multimodal Artificial Intelligence & Intelligent Systems",
+      "Sustainable AI, IoT"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919114854537739_Nivedita_Kasturi.jpg"
+  },
+  {
+    "name": "Prof. Lakshmi Satya Vani N",
+    "designation": "Associate Professor",
+    "email": "sathyavaninl@pes.edu",
+    "expertise": [
+      "Machine Learning"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr. M. Shalima Sulthana",
+    "designation": "Associate Professor",
+    "email": "mssulthana@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "Deep Learning",
+      "-"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142822173680.jpg"
+  },
+  {
+    "name": "Dr.Gokulakrishnan S",
+    "designation": "Associate Professor",
+    "email": "gokulakrishnan.s@pes.edu",
+    "expertise": [
+      "Cloud Computing,Data Analytics",
+      "Human Computer Interaction/UI UX Design",
+      "Social Web",
+      "Data Science and Data Analytics"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131101772893_New_Project_1.jpg"
+  },
+  {
+    "name": "Saravanaraj S",
+    "designation": "Associate Professor",
+    "email": "sarvansridharan@gmail.com",
+    "expertise": [
+      "Cloud Computing, Agentic AI",
+      "Cybersecurity",
+      "Computer Networks"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Shilpa S",
+    "designation": "Assistant Prof.",
+    "email": "shilpas@pes.edu",
+    "expertise": [
+      "Computer Vision",
+      "Cloud Computing",
+      "Data Analytics and Big data Analytics",
+      "Deep Learning , Computer vision"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082603629580_Shilpa_S.jpg"
+  },
+  {
+    "name": "Shruthi L",
+    "designation": "Assistant Prof.",
+    "email": "shruthil@pes.edu",
+    "expertise": [
+      "Blockchain Technology",
+      "Cyber security",
+      "Computer Networks,IOT",
+      "ML and Cyber security"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120015326284_Shruthi_L.jpg"
+  },
+  {
+    "name": "Prof SWETHA PATIL",
+    "designation": "Assistant Prof.",
+    "email": "swetha.patil@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Computer Vision",
+      "Deep Learning",
+      "AI in Agriculture"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920041834513423_23428a.jpg"
+  },
+  {
+    "name": "Prof.Lenish Pramiee",
+    "designation": "Assistant Prof.",
+    "email": "lenish.pj@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Computer Vision",
+      "Deep Learning",
+      "Image/Video Processing,Security"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240417052232914935_Lenish.jpg"
+  },
+  {
+    "name": "NEHA SHARMA",
+    "designation": "Assistant Prof.",
+    "email": "neha.sharma@pes.edu",
+    "expertise": [
+      "Machine learning/Deep Learning",
+      "AI in Healthcare",
+      "Computer vision",
+      "AI in Agriculture"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240117124515272352_Neha_Sharma.jpg"
+  },
+  {
+    "name": "Kundhavai K R",
+    "designation": "Assistant Prof.",
+    "email": "kundhavaikr@pes.edu",
+    "expertise": [
+      "Cyber security",
+      "Deep Learning",
+      "Artificial Intelligence/Gen AI/Explainable AI",
+      "LLM/RAG"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Divya Ebenezer Nathaniel",
+    "designation": "Assistant Prof.",
+    "email": "divya.en@pes.edu",
+    "expertise": [
+      "Cloud Computing",
+      "Machine Learning",
+      "Deep Learning"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061117998962_Divya_Ebenezer_Nathaniel.jpg"
+  },
+  {
+    "name": "Deepti C",
+    "designation": "Assistant Prof.",
+    "email": "deeptic@pes.edu",
+    "expertise": [
+      "IoT and Wireless Sensor Networks",
+      "Cyber security",
+      "Machine Learning"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120113925271_Deepti_C.jpg"
+  },
+  {
+    "name": "Ruby Dinakar",
+    "designation": "Assistant Prof.",
+    "email": "rubydinakar@pes.edu",
+    "expertise": [
+      "AI in Heathcare",
+      "Data Analytics and Big data Analytics",
+      "Deep learning /Computer Vision/ Agentic AI",
+      "Robotics, IOT, Cloud Computing , Federated Learning"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220803092054000560.jpg"
+  },
+  {
+    "name": "NAGALAKSHMI S R",
+    "designation": "Assistant Prof.",
+    "email": "",
+    "expertise": [
+      "Software testing",
+      "verification -Formal Methods",
+      "IoT / Distributed/ safety critical applications",
+      "Robotics"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114241914089_New_Project_1.jpg"
+  },
+  {
+    "name": "Swathi Priya N",
+    "designation": "Assistant Prof.",
+    "email": "swathipriya.n@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Data Analytics and Big data Analytics",
+      "Natural Language Processing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240807031747019295_New_Project.jpg"
+  },
+  {
+    "name": "Sheela Devi M",
+    "designation": "Assistant Prof.",
+    "email": "sheelam@pes.edu",
+    "expertise": [
+      "Cyber security,AI in cybersecurity,IOT,VANET,MANET",
+      "Computer Networks",
+      "IoT and Wireless Sensor Networks,Data Mining,machine learning,Cyber Security,ethical Hacking,adhoc networks,VANET,MANET"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921081828614623_Sheela_Devi_M.jpg"
+  },
+  {
+    "name": "Sowmya A M",
+    "designation": "Assistant Professor",
+    "email": "sowmyam@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Cyber Security",
+      "AI in Healthcare",
+      "IOT"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131850161275_New_Project.jpg"
+  },
+  {
+    "name": "Ankita Singhai",
+    "designation": "Assistant Professor",
+    "email": "ankitasinghai@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Deep Learning",
+      "Artificial Intelligence/Gen AI/Explainable AI"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251022101811977025_ankitha_1.jpg"
+  },
+  {
+    "name": "Senthil Anandhi A",
+    "designation": "Assistant Professor",
+    "email": "senthilanandhi.a@pes.edu",
+    "expertise": [
+      "Image Processing",
+      "Deep learning",
+      "Computer Vision"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223132102050280_New_Project_2.jpg"
+  },
+  {
+    "name": "Remya Sivan",
+    "designation": "Assistant Professor",
+    "email": "remyasivan@pesu.edu",
+    "expertise": [
+      "Computer Vision",
+      "Machine Learning/Deep Learning",
+      "Natural Language Processing"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142923725803.jpg"
+  },
+  {
+    "name": "Shemeema Hashim",
+    "designation": "Assistant Professor",
+    "email": "shemeemahashim@pes.edu",
+    "expertise": [
+      "Machine Learning",
+      "Natural Language Processing"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Thangamani.R",
+    "designation": "Assistant Professor",
+    "email": "thangamanir@pes.edu",
+    "expertise": [
+      "Computer Networks",
+      "cybersecurity"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Prof.Vinu",
+    "designation": "Assistant Professor",
+    "email": "vinu5univ@gmail.com",
+    "expertise": [
+      "Computer Networks",
+      "Machine Learning",
+      "Cloud Computing"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Prof. Pranjali",
+    "designation": "Assistant Professor",
+    "email": "pranjali.st@pes.edu",
+    "expertise": [
+      "Machine Learning/Advanced ML/Explainable AI",
+      "Deep Learning/Agentic AI/Gen AI",
+      "AI in healthcare",
+      "Computational Neuroscience"
+    ],
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061312883603_Pranjali_Swapnil_Thakre.jpg"
+  },
+  {
+    "name": "Asha Kumari A",
+    "designation": "Assistant Professor",
+    "email": "asha.hebbar@gmail.com",
+    "expertise": [
+      "Edge computing",
+      "Federated Learning",
+      "Cloud Computing"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Dr. Deena Hijam",
+    "designation": "Assistant Professor",
+    "email": "deenahij@gmail.com",
+    "expertise": [
+      "Machine Learning/Deep learning",
+      "Natural Language Processing",
+      "Computer Vision"
+    ],
+    "photo": ""
+  },
+  {
+    "name": "Prof. Supreetha S",
+    "designation": "Assistant Professor",
+    "email": "supreetha.s3191@gmail.com",
+    "expertise": [
+      "Machine Learning/Deep Learning",
+      "AI in Agriculture",
+      "IoT, Computer Networks"
+    ],
+    "photo": ""
+  }
+]
