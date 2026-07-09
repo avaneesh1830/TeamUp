@@ -35,6 +35,9 @@
       <p class="intro-text">This website has all the required criteria built in, which will help you
         filter out students who are eligible for your team — or the team you would want to join.</p>
 
+      <button class="btn primary introGo" type="button">Get started →</button>
+
+      <div id="introContent">
       <h3>🔁 Overall process</h3>
       <div class="slot-row" style="margin-bottom:6px">
         <span class="badge branch">1 · Team formation</span>
@@ -70,33 +73,10 @@
         <li>You may choose <strong>any domain and problem statement</strong> based on your team's interest.</li>
         <li>A list of faculty members and their domains is shared —
           <a href="https://docs.google.com/spreadsheets/d/1QrH5p2buHSSFSBXGZ4_ZYLsKlDORG8m85LAp55HanI/edit?usp=sharing" target="_blank" rel="noopener">faculty domains sheet</a> —
-          and you can browse mentors with photos right here in TeamUp.</li>
+          and you can connect with mentors right here on TeamUp who align with your domain and academic interests.</li>
         <li>Talk to faculty in the department with interests matching your team, and discuss problem statements over mail — they will give inputs and suggestions.</li>
         <li>After discussion with faculty, each batch <strong>proposes a guide</strong>.</li>
       </ul>
-
-      <h3>🗂️ Available project areas</h3>
-      <div class="phase-grid">
-        <div class="phase-card">
-          <h4>🤖 AI, ML &amp; Intelligent Systems</h4>
-          <p>Artificial Intelligence / Gen AI · Machine Learning · Deep Learning · Natural Language Processing ·
-             Computer Vision · Web Intelligence · Knowledge Graph / Ontologies</p>
-        </div>
-        <div class="phase-card">
-          <h4>🛡️ Infrastructure &amp; Security</h4>
-          <p>Cloud Computing · Cyber Security · Blockchain Technology · Computer Networks ·
-             System &amp; Parallel Computing</p>
-        </div>
-        <div class="phase-card">
-          <h4>📡 IoT, Robotics &amp; Interactive Tech</h4>
-          <p>IoT &amp; Wireless Sensor Networks · Robotics Process Automation · Augmented &amp; Virtual Reality ·
-             Drone Computing</p>
-        </div>
-        <div class="phase-card">
-          <h4>📊 Data</h4>
-          <p>Data Analytics &amp; Big Data</p>
-        </div>
-      </div>
 
       <h3>📝 Evaluation policy — Phase-1</h3>
       <div class="slot-row" style="margin-bottom:6px">
@@ -105,12 +85,6 @@
         <span class="badge gender">2 reviews for ISA</span>
         <span class="badge gender">1 review for ESA</span>
       </div>
-
-      <h3>📢 Stay in the loop</h3>
-      <ul class="intro-list">
-        <li>Ensure you are part of the Google group
-          <strong>eccbatch2428pesuofficial@googlegroups.com</strong> — if you're not, contact your class CR.</li>
-      </ul>
 
       <h3>📮 Capstone coordinators — CSE Dept.</h3>
       <ul class="intro-list">
@@ -145,8 +119,9 @@
           <p>Paper publication in Scopus indexed journals / Web of Science / UGC journals, etc.</p>
         </div>
       </div>
+      </div><!-- /introContent -->
 
-      <button id="introContinue" class="btn primary full" type="button">Get started →</button>
+      <button class="btn primary full introGo" type="button">Get started →</button>
     </div>
   </div>
 
@@ -222,6 +197,7 @@
       <button class="mtab" data-tab="team" type="button">My Team</button>
       <button class="mtab" data-tab="requests" type="button">Requests <span id="reqBadge" class="notif hidden"></span></button>
       <button class="mtab" data-tab="profile" type="button">My Profile</button>
+      <button class="mtab" data-tab="rules" type="button">Rules &amp; Info</button>
     </nav>
 
     <main><div id="content"></div></main>
@@ -229,7 +205,6 @@
     <footer>
       <p>Team rules: 4 members · grade mix must be AABC, ABBC, ABCC, AACC or BBCC · CSE &amp; AIML can combine · mixed-gender teams preferred but not required</p>
       <p class="campus-tag">Made in PESU for PESU ❤️</p>
-      <p><button id="aboutLink" class="linklike" type="button">ℹ️ About TeamUp &amp; Capstone roadmap</button></p>
     </footer>
   </div>
 

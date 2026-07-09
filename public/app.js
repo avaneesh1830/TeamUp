@@ -66,18 +66,17 @@ function toast(msg, type = 'err') {
   toastTimer = setTimeout(() => (t.className = ''), 3500);
 }
 
-// ---------- intro / welcome view ----------
-// shown before login AND once again right after logging in
-function showIntro(afterLogin = false) {
+// ---------- intro / welcome view (pre-login only; logged-in users get the Rules & Info tab) ----------
+function showIntro() {
   $('introView').classList.remove('hidden');
   $('authView').classList.add('hidden');
   $('mainView').classList.add('hidden');
-  const btn = $('introContinue');
-  btn.textContent = afterLogin || token ? 'Continue to TeamUp →' : 'Get started →';
-  btn.onclick = () => {
-    $('introView').classList.add('hidden');
-    refresh(); // routes to auth (no token) or the main app
-  };
+  document.querySelectorAll('.introGo').forEach((btn) => {
+    btn.onclick = () => {
+      $('introView').classList.add('hidden');
+      refresh(); // routes to auth (no token) or the main app
+    };
+  });
   window.scrollTo(0, 0);
 }
 
@@ -126,7 +125,7 @@ function setToken(t) {
   token = t;
   localStorage.setItem('token', t);
   activeTab = 'browse';
-  showIntro(true); // welcome page again right after logging in
+  refresh(); // guidelines live in the Rules & Info tab once logged in
 }
 
 function logout() {
@@ -293,7 +292,7 @@ function render() {
     badge.classList.remove('hidden');
   } else badge.classList.add('hidden');
 
-  const views = { browse: browseHtml, students: studentsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml };
+  const views = { browse: browseHtml, students: studentsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml, rules: rulesHtml };
   $('content').innerHTML = views[activeTab]();
   bindActions();
   if (activeTab === 'students') searchStudents(); // directory loads immediately
@@ -656,6 +655,12 @@ function requestsHtml() {
   }
   html += `</div>`;
   return html;
+}
+
+// ---------- tab: rules & info (same content as the welcome page) ----------
+function rulesHtml() {
+  return `<div class="section-head fade-up"><div><h2>Rules &amp; Info</h2><p>Everything about Capstone team formation, straight from the official guidelines</p></div></div>
+  <div class="card">${$('introContent').innerHTML}</div>`;
 }
 
 // ---------- tab: my profile ----------
@@ -1085,10 +1090,6 @@ async function refresh() {
     if (token) toast(e.message);
   }
 }
-
-// footer "About" link re-opens the welcome page anytime
-const aboutLink = $('aboutLink');
-if (aboutLink) aboutLink.onclick = () => showIntro();
 
 // first load: visitors see the welcome page; logged-in users go straight in
 if (!token) showIntro();
