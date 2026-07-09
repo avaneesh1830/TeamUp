@@ -34,7 +34,8 @@ Built by [Avaneesh Aroor](https://github.com/avaneesh1830).
   - grade mix (A = CGPA 8+, B = 7–8, C = <7) must be one of the allowed combinations:
     **AABC, ABBC, ABCC, AACC, BBCC**
   - mixed-gender teams are **preferred but not required** — all-male / all-female teams are allowed
-  - **same branch only** (CSE / AIML / ECE) — cross-branch joins are blocked with a clear error
+  - **CSE and AIML students can combine** in one team; ECE teams are ECE-only —
+    incompatible joins are blocked with a clear error
 - The team creator becomes **leader** 👑 and approves or rejects join requests
 - Every team card shows exactly **which grade slots are still open**, computed live
   (e.g. a team with A+A+B can only take a C — anything else would break the allowed combos)

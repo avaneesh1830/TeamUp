@@ -149,10 +149,15 @@ function slotInfo(team) {
   };
 }
 
+// CSE and AIML are computing branches that may combine in one team
+const branchesCombine = (a, b) => a === b || (['CSE', 'AIML'].includes(a) && ['CSE', 'AIML'].includes(b));
+
 // null if user can join, otherwise a reason string
 function joinBlock(team, user) {
-  if (user.branch !== team.branch)
-    return `Only ${team.branch} students can join this team`;
+  if (!branchesCombine(user.branch, team.branch))
+    return team.branch === 'ECE'
+      ? 'Only ECE students can join this team'
+      : 'Only CSE / AIML students can join this team';
   const s = slotInfo(team);
   if (s.remaining === 0) return 'Team is full';
   const g = gradeOf(user.cgpa);
@@ -315,8 +320,8 @@ app.post('/api/profile', auth, (req, res) => {
   // if in a team, the change must not break the team's rules
   const team = teamOf(req.user.srn);
   if (team) {
-    if (branch !== team.branch)
-      return res.status(400).json({ error: `You are in a ${team.branch} team — leave it before changing branch` });
+    if (!branchesCombine(branch, team.branch))
+      return res.status(400).json({ error: `You are in a ${team.branch} team — leave it before changing to an incompatible branch` });
     const sim = team.members.map((s) =>
       s === req.user.srn ? { cgpa: c } : userBySrn(s)
     );

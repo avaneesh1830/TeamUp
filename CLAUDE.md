@@ -16,7 +16,8 @@ vanilla HTML/CSS/JS frontend (no build step), JSON-file database.
 - Grades: A = CGPA ≥ 8, B = 7–8, C = < 7. A complete team's grade multiset must be
   one of exactly: **AABC, ABBC, ABCC, AACC, BBCC** (whitelist in `ALLOWED_GRADE_COMBOS`).
 - Gender: mixed teams are PREFERRED but NOT enforced — all-male / all-female teams are valid.
-- Same branch only (team inherits its leader's branch: CSE / AIML / ECE).
+- Branches: CSE and AIML can COMBINE in one team (`branchesCombine`); ECE teams are ECE-only.
+  A team's `branch` label is its leader's branch.
 - Slot feasibility: a grade slot is "open" only if adding that grade can still
   grow into one of the allowed combos (`fitsSomeCombo`).
 - Team domains and profile interests come ONLY from the DOMAINS list
