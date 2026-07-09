@@ -196,10 +196,27 @@ function showProfile(srn) {
   $('profileModal').classList.remove('hidden');
   $('profileClose').onclick = () => $('profileModal').classList.add('hidden');
 }
-// one global handler covers every clickable name, even in re-rendered lists
+// team detail dialog — opened by clicking a team you've sent a request to
+function showTeam(teamId) {
+  const t = teams.find((x) => x.id === teamId);
+  if (!t) return toast('That team no longer exists');
+  $('profileCard').innerHTML = `
+    ${teamCardHead(t)}
+    ${mentorLine(t)}
+    <h3>Members — click a name for their profile</h3>
+    ${t.members.map((m) => memberRow(m, t.leader)).join('')}
+    ${slotRow(t.slots)}
+    <div class="modal-actions"><button class="btn ghost" id="teamClose" type="button">Close</button></div>`;
+  $('profileModal').classList.remove('hidden');
+  $('teamClose').onclick = () => $('profileModal').classList.add('hidden');
+}
+
+// one global handler covers every clickable name/team, even in re-rendered lists
 document.addEventListener('click', (e) => {
   const p = e.target.closest('[data-profile]');
-  if (p) showProfile(p.dataset.profile);
+  if (p) return showProfile(p.dataset.profile);
+  const v = e.target.closest('[data-viewteam]');
+  if (v) return showTeam(v.dataset.viewteam);
   if (e.target.id === 'profileModal') $('profileModal').classList.add('hidden');
 });
 
@@ -612,7 +629,8 @@ function requestsHtml() {
     const decided = me.outgoing.filter((r) => r.status !== 'pending');
     html += [...pending, ...decided]
       .map(
-        (r) => `<div class="req-row"><span>${esc(r.teamDomain)}</span>
+        (r) => `<div class="req-row">
+          <button class="plink" data-viewteam="${esc(r.teamId)}" type="button">${esc(r.teamDomain)}</button>
           ${
             r.status === 'pending'
               ? `<button class="btn small danger" data-cancel-req="${r.id}" type="button">Cancel request</button>`

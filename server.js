@@ -258,7 +258,7 @@ app.get('/api/me', auth, (req, res) => {
     .filter((r) => r.srn === me.srn)
     .map((r) => {
       const t = db.teams.find((x) => x.id === r.teamId);
-      return { id: r.id, teamDomain: t ? t.domains.join(' / ') : '(deleted team)', status: r.status };
+      return { id: r.id, teamId: r.teamId, teamDomain: t ? t.domains.join(' / ') : '(deleted team)', status: r.status };
     });
   // invitations sent TO me by team leaders
   const invites = db.invites
