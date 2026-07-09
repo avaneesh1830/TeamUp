@@ -13,11 +13,12 @@ vanilla HTML/CSS/JS frontend (no build step), JSON-file database.
 ## Team rules (the core invariants — never weaken these)
 
 - Exactly 4 members per team.
-- At least one A (CGPA ≥ 8), one B (7–8), and one C (< 7) grade member.
-- 1–3 male AND 1–3 female members.
+- Grades: A = CGPA ≥ 8, B = 7–8, C = < 7. A complete team's grade multiset must be
+  one of exactly: **AABC, ABBC, ABCC, AACC, BBCC** (whitelist in `ALLOWED_GRADE_COMBOS`).
+- Gender: mixed teams are PREFERRED but NOT enforced — all-male / all-female teams are valid.
 - Same branch only (team inherits its leader's branch: CSE / AIML / ECE).
-- Slot feasibility: a grade slot is "open" only if, after filling it, the remaining
-  missing grades still fit in the remaining seats.
+- Slot feasibility: a grade slot is "open" only if adding that grade can still
+  grow into one of the allowed combos (`fitsSomeCombo`).
 - Team domains and profile interests come ONLY from the DOMAINS list
   (duplicated in `server.js` and `app.js` — keep both in sync).
 - Rules are checked at request time, invite time, accept time, AND profile-edit time.

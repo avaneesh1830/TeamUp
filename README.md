@@ -31,13 +31,13 @@ Built by [Avaneesh Aroor](https://github.com/avaneesh1830).
 
 ### 🧩 Team formation with rules enforced automatically
 - Teams of **exactly 4 members** — the system makes an invalid team impossible:
-  - at least **one A (CGPA 8+), one B (7–8), and one C (<7)** grade member
-    (the 4th seat can repeat any grade)
-  - **1–3 male and 1–3 female** members
+  - grade mix (A = CGPA 8+, B = 7–8, C = <7) must be one of the allowed combinations:
+    **AABC, ABBC, ABCC, AACC, BBCC**
+  - mixed-gender teams are **preferred but not required** — all-male / all-female teams are allowed
   - **same branch only** (CSE / AIML / ECE) — cross-branch joins are blocked with a clear error
 - The team creator becomes **leader** 👑 and approves or rejects join requests
-- Every team card shows exactly **which grade slots and gender slots are still open**,
-  computed live (e.g. a team with two A-grades and two seats left reserves them for B and C)
+- Every team card shows exactly **which grade slots are still open**, computed live
+  (e.g. a team with A+A+B can only take a C — anything else would break the allowed combos)
 - Rules are re-checked at accept time too, so stale requests can't sneak in
 
 ### 🔎 Finding the right teammates

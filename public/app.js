@@ -32,7 +32,7 @@ let me = null; // { user, team, incoming, outgoing }
 let teams = [];
 let professors = [];
 let activeTab = 'browse'; // browse | students | team | requests | profile
-let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL', showFull: false, canJoin: false };
+let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', showFull: false, canJoin: false };
 let mentorQuery = '';
 let studentQuery = '';
 let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
@@ -224,15 +224,14 @@ function slotRow(s) {
   const gradeBadges = ['A', 'B', 'C']
     .map((g) => {
       const open = s.openGrades.includes(g);
-      const needed = s.missing.includes(g);
-      return `<span class="badge ${open ? 'open' : 'closed'}" title="${open ? 'slot available' : 'not available'}">${g}${needed && open ? ' · needed' : ''}</span>`;
+      return `<span class="badge ${open ? 'open' : 'closed'}" title="${open ? 'slot available' : 'would break the allowed grade combos'}">${g}</span>`;
     })
     .join(' ');
   return `
     <div class="slot-row"><span class="lbl">Grade slots:</span> ${s.remaining === 0 ? '<span class="badge closed">team full</span>' : gradeBadges}</div>
-    <div class="slot-row"><span class="lbl">Gender slots:</span>
-      <span class="badge ${s.boysOpen ? 'open' : 'closed'}">Male ${s.boys}/3</span>
-      <span class="badge ${s.girlsOpen ? 'open' : 'closed'}">Female ${s.girls}/3</span>
+    <div class="slot-row"><span class="lbl">Members:</span>
+      <span class="badge gender">Male ${s.boys}</span>
+      <span class="badge gender">Female ${s.girls}</span>
       <span class="lbl">· ${s.remaining} seat${s.remaining === 1 ? '' : 's'} left</span>
     </div>`;
 }
@@ -293,7 +292,7 @@ function browseHtml() {
   const domainOpts = [...new Set(teams.flatMap((t) => t.domains))].sort();
   const anyFilter =
     filters.branch !== 'ALL' || filters.domain !== 'ALL' || filters.grade !== 'ALL' ||
-    filters.gender !== 'ALL' || filters.showFull || filters.canJoin;
+    filters.showFull || filters.canJoin;
 
   const visible = teams.filter(
     (t) =>
@@ -303,8 +302,7 @@ function browseHtml() {
       (!filters.canJoin || t.joinBlock === null) &&
       (filters.branch === 'ALL' || t.branch === filters.branch) &&
       (filters.domain === 'ALL' || t.domains.includes(filters.domain)) &&
-      (filters.grade === 'ALL' || t.slots.openGrades.includes(filters.grade)) &&
-      (filters.gender === 'ALL' || (filters.gender === 'M' ? t.slots.boysOpen : t.slots.girlsOpen))
+      (filters.grade === 'ALL' || t.slots.openGrades.includes(filters.grade))
   );
 
   let html = `<div class="section-head fade-up">
@@ -321,11 +319,6 @@ function browseHtml() {
     <select id="fGrade">
       <option value="ALL">Any grade slot</option>
       ${['A', 'B', 'C'].map((g) => `<option value="${g}" ${filters.grade === g ? 'selected' : ''}>${g}-grade slot open</option>`).join('')}
-    </select>
-    <select id="fGender">
-      <option value="ALL">Any gender slot</option>
-      <option value="M" ${filters.gender === 'M' ? 'selected' : ''}>Male can join</option>
-      <option value="F" ${filters.gender === 'F' ? 'selected' : ''}>Female can join</option>
     </select>
     ${!me.team ? `<button id="bCanJoin" class="chip ${filters.canJoin ? 'active' : ''}" type="button">Eligible to join</button>` : ''}
     <button id="bShowFull" class="chip ${filters.showFull ? 'active' : ''}" type="button">Show full teams</button>
@@ -747,7 +740,6 @@ function bindActions() {
   };
   bindSel('fDomain', 'domain');
   bindSel('fGrade', 'grade');
-  bindSel('fGender', 'gender');
 
   // students directory filters (no full re-render — just refetch the list)
   const bindSFilter = (id, key) => {
@@ -782,7 +774,7 @@ function bindActions() {
   const clearBtn = $('clearFilters');
   if (clearBtn)
     clearBtn.onclick = () => {
-      filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', gender: 'ALL', showFull: false, canJoin: false };
+      filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', showFull: false, canJoin: false };
       render();
     };
   const bCanJoin = $('bCanJoin');

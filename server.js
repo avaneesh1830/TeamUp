@@ -113,6 +113,22 @@ function auth(req, res, next) {
   next();
 }
 
+// the ONLY grade combinations a complete team of 4 may have
+const ALLOWED_GRADE_COMBOS = ['AABC', 'ABBC', 'ABCC', 'AACC', 'BBCC'].map((s) => s.split(''));
+
+// can this (partial) set of grades still grow into one of the allowed combos?
+function fitsSomeCombo(grades) {
+  return ALLOWED_GRADE_COMBOS.some((combo) => {
+    const left = [...combo];
+    return grades.every((g) => {
+      const i = left.indexOf(g);
+      if (i < 0) return false;
+      left.splice(i, 1);
+      return true;
+    });
+  });
+}
+
 // Which slots are still open on a team?
 function slotInfo(team) {
   const members = team.members.map(userBySrn);
@@ -120,23 +136,16 @@ function slotInfo(team) {
   const grades = members.map((m) => gradeOf(m.cgpa));
   const boys = members.filter((m) => m.gender === 'M').length;
   const girls = members.length - boys;
-  // Grades the team is still missing (needs at least one A, one B, one C)
-  const missing = ['A', 'B', 'C'].filter((g) => !grades.includes(g));
-  // A grade slot is open if, after taking it, the other missing grades still fit
-  const openGrades =
-    remaining === 0
-      ? []
-      : ['A', 'B', 'C'].filter(
-          (g) => missing.filter((x) => x !== g).length <= remaining - 1
-        );
+  // a grade slot is open if adding it can still lead to an allowed combination
+  const openGrades = remaining === 0 ? [] : ['A', 'B', 'C'].filter((g) => fitsSomeCombo([...grades, g]));
   return {
     remaining,
     boys,
     girls,
-    missing,
     openGrades,
-    boysOpen: remaining > 0 && boys < 3, // final team needs 1-3 male
-    girlsOpen: remaining > 0 && girls < 3, // and 1-3 female
+    // mixed-gender teams are preferred but NOT required — any gender can take an open seat
+    boysOpen: remaining > 0,
+    girlsOpen: remaining > 0,
   };
 }
 
@@ -148,9 +157,7 @@ function joinBlock(team, user) {
   if (s.remaining === 0) return 'Team is full';
   const g = gradeOf(user.cgpa);
   if (!s.openGrades.includes(g))
-    return `No ${g}-grade slot left (team still needs: ${s.missing.join(', ')})`;
-  if (user.gender === 'M' && !s.boysOpen) return 'Male slots full (max 3)';
-  if (user.gender === 'F' && !s.girlsOpen) return 'Female slots full (max 3)';
+    return `No ${g}-grade slot — it would break the allowed grade combinations`;
   return null;
 }
 
@@ -311,17 +318,12 @@ app.post('/api/profile', auth, (req, res) => {
     if (branch !== team.branch)
       return res.status(400).json({ error: `You are in a ${team.branch} team — leave it before changing branch` });
     const sim = team.members.map((s) =>
-      s === req.user.srn ? { gender, cgpa: c } : userBySrn(s)
+      s === req.user.srn ? { cgpa: c } : userBySrn(s)
     );
-    const boys = sim.filter((m) => m.gender === 'M').length;
-    const girls = sim.length - boys;
-    if (boys > 3 || girls > 3)
-      return res.status(400).json({ error: "This change would break your team's gender mix (max 3 male / 3 female)" });
     const grades = sim.map((m) => gradeOf(m.cgpa));
-    const missing = ['A', 'B', 'C'].filter((g) => !grades.includes(g));
-    if (missing.length > TEAM_SIZE - sim.length)
+    if (!fitsSomeCombo(grades))
       return res.status(400).json({
-        error: `This change would break your team's grade mix (team would still need ${missing.join(', ')} with only ${TEAM_SIZE - sim.length} seat${TEAM_SIZE - sim.length === 1 ? '' : 's'} left)`,
+        error: "This change would break your team's allowed grade combination (AABC, ABBC, ABCC, AACC or BBCC)",
       });
   }
 
@@ -416,7 +418,7 @@ app.get('/api/professors', auth, (req, res) => {
 // ---------- student directory (all students, alphabetical, filterable) ----------
 app.get('/api/students', auth, (req, res) => {
   const q = (req.query.q || '').trim().toLowerCase();
-  const { gender, grade, domain, eligible } = req.query;
+  const { gender, grade, domain, branch, eligible } = req.query;
   const myTeam = teamOf(req.user.srn);
   // any member of a team with an open seat gets invite powers + the eligibility filter
   const canInvite = myTeam && slotInfo(myTeam).remaining > 0;
@@ -425,6 +427,7 @@ app.get('/api/students', auth, (req, res) => {
     .filter((u) =>
       q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn) || u.srn === req.user.srn
     )
+    .filter((u) => !branch || u.branch === branch)
     .filter((u) => !gender || u.gender === gender)
     .filter((u) => !grade || gradeOf(u.cgpa) === grade)
     .filter((u) => !domain || (u.domains || []).includes(domain))
