@@ -45,6 +45,7 @@ vanilla HTML/CSS/JS frontend (no build step), JSON-file database.
   curl against real endpoints before declaring it done.
 - Test with temp accounts registered via the API, then delete them via
   DELETE /api/account — never mutate or delete real users' data.
-- Git: plain commit messages, no Co-Authored-By trailers. Push to
-  github.com/avaneesh1830/TeamUp when asked.
+- Git: small commits, ONE feature per commit, short imperative message
+  (e.g. "Browse: hide full teams by default"). No Co-Authored-By trailers.
+  Push to github.com/avaneesh1830/TeamUp when asked.
 - Docker image: `avaneesharoor/teamup` — remind the user to rebuild+push after changes.
