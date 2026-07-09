@@ -35,7 +35,7 @@ let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', showFull: false, canJoin: false };
 let mentorQuery = '';
 let studentQuery = '';
-let sFilters = { gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
+let sFilters = { branch: 'ALL', gender: 'ALL', grade: 'ALL', domain: 'ALL', eligible: false }; // students directory filters
 
 async function api(path, method = 'GET', body) {
   const res = await fetch('/api' + path, {
@@ -369,6 +369,10 @@ function studentsHtml() {
   </div>
   <div class="card filter-bar fade-up">
     <span class="lbl">Filters</span>
+    <select id="sfBranch">
+      <option value="ALL">Any branch</option>
+      ${BRANCHES.map((b) => `<option value="${b}" ${sFilters.branch === b ? 'selected' : ''}>${b}</option>`).join('')}
+    </select>
     <select id="sfGender">
       <option value="ALL">Any gender</option>
       <option value="M" ${sFilters.gender === 'M' ? 'selected' : ''}>Male</option>
@@ -447,6 +451,7 @@ async function searchStudents() {
   try {
     const params = new URLSearchParams();
     if (studentQuery.trim()) params.set('q', studentQuery.trim());
+    if (sFilters.branch !== 'ALL') params.set('branch', sFilters.branch);
     if (sFilters.gender !== 'ALL') params.set('gender', sFilters.gender);
     if (sFilters.grade !== 'ALL') params.set('grade', sFilters.grade);
     if (sFilters.domain !== 'ALL') params.set('domain', sFilters.domain);
@@ -746,6 +751,7 @@ function bindActions() {
     const el = $(id);
     if (el) el.onchange = () => { sFilters[key] = el.value; searchStudents(); };
   };
+  bindSFilter('sfBranch', 'branch');
   bindSFilter('sfGender', 'gender');
   bindSFilter('sfGrade', 'grade');
   bindSFilter('sfDomain', 'domain');
