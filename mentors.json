@@ -6,7 +6,8 @@
     "expertise": [
       "Computer Vision"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20210615110838000686.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20210615110838000686.jpg",
+    "id": "m01"
   },
   {
     "name": "Dr. Arti Arya",
@@ -17,7 +18,8 @@
       "Natural Language Processing",
       "GenAI, Agentic AI, LLM,ML/DL,BDA,Parallel computing,Algorithms(Optimization Techniques), GNNs, Knowledge Graphs and Ontologies ,Graph Neural Networks"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113626192596_Arti_Arya.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113626192596_Arti_Arya.jpg",
+    "id": "m02"
   },
   {
     "name": "Dr Pooja Agarwal",
@@ -29,7 +31,8 @@
       "Computer Vision",
       "GenAI, LLM, ML, DL, Optimization Techniques, Image/Video Processing, Knowledge Graphs and Ontologies, Graph Neural Networks"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920111907588323_Pooja_Agarwal.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920111907588323_Pooja_Agarwal.jpg",
+    "id": "m03"
   },
   {
     "name": "Dr.M.Farida Begam",
@@ -41,7 +44,8 @@
       "Artificial Intelligence/Gen AI/Explainable AI",
       "Knowledge graphs , Ontologies, Deep Learning, Computer vision, System and Architecture/Parallel Computing/ Compiler Optimization"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m04"
   },
   {
     "name": "Dr.Sharavana.K",
@@ -53,7 +57,8 @@
       "Data Analytics and Big data Analytics",
       "Augmented Reality (AR), Virtual Reality (VR), Extended Reality (XR), Digital Twin Technologies, and Quantum Computing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104132139605824_New_Project.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104132139605824_New_Project.jpg",
+    "id": "m05"
   },
   {
     "name": "Dr. Gokul Kannan Sadasivam",
@@ -64,7 +69,8 @@
       "Automotive Security, Drone Security, Hardware Security, Side Channel Attacks",
       "Robotics, Reinforcement Learning, Drone, Internet of Things"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20220729081913000353.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220729081913000353.jpg",
+    "id": "m06"
   },
   {
     "name": "Dr.Manju",
@@ -75,7 +81,8 @@
       "Distributed Computing",
       "Cloud computing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20250305125327976298_manju.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250305125327976298_manju.jpg",
+    "id": "m07"
   },
   {
     "name": "Dr.Vinodha K",
@@ -87,7 +94,8 @@
       "Machine Intelligence",
       "System and Architecture, Bio-inspired computing,Integrating AI/ML with IoT and Blockchain, Wireless sensor networks, Network security"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113853300571_Vinodha_K.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920113853300571_Vinodha_K.jpg",
+    "id": "m08"
   },
   {
     "name": "Dr. Vishnu S Tiwari",
@@ -99,21 +107,24 @@
       "Software Architecture, Software System Design, Large Scale Software Development, Scalable Systems",
       "Geographicl Information Systems, Automatation, Formal Verification, Language Processing"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m09"
   },
   {
     "name": "Prof.Siba Ram",
     "designation": "",
     "email": "",
     "expertise": [],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142954655007.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142954655007.jpg",
+    "id": "m10"
   },
   {
     "name": "Dr.Ashwini",
     "designation": "Professor",
     "email": "",
     "expertise": [],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142857378959.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142857378959.jpg",
+    "id": "m11"
   },
   {
     "name": "Dr.Sudeepa Roy",
@@ -122,7 +133,8 @@
     "expertise": [
       "AI in Heathcare"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105128318892_Sudeepa_Roy_Dey.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105128318892_Sudeepa_Roy_Dey.jpg",
+    "id": "m12"
   },
   {
     "name": "Dr.Prajwala TR",
@@ -134,7 +146,8 @@
       "Computer Vision",
       "system and core computing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113010334328_Prajwala_T_R.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113010334328_Prajwala_T_R.jpg",
+    "id": "m13"
   },
   {
     "name": "Dr.Vandana M L",
@@ -146,7 +159,8 @@
       "Cognitive computing",
       "Artificial Intelligence/Gen AI/Explainable AI/Signal processing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062435492394_Vandana_M_Ladwani.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062435492394_Vandana_M_Ladwani.jpg",
+    "id": "m14"
   },
   {
     "name": "Dr.Animesh Giri",
@@ -158,7 +172,8 @@
       "IoT and Wireless Sensor Networks",
       "ML,NLP, Blockchain, Computer Networks , Cloud Computing Distributed & Parallel Computing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062645765137_Animesh_Giri.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921062645765137_Animesh_Giri.jpg",
+    "id": "m15"
   },
   {
     "name": "Dr. Chandrashekhar P Chavan",
@@ -170,7 +185,8 @@
       "Cloud Computing, Big Data, Machine Learning",
       "Quantum Computing, Network security, Massive parallel computing, Block chain, Edge computing, Data Analytics and GenAI"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921065504695350_Dr._Chandrashekhar_P_Chavan.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921065504695350_Dr._Chandrashekhar_P_Chavan.jpg",
+    "id": "m16"
   },
   {
     "name": "Dr. Geetha Dayalan",
@@ -182,7 +198,8 @@
       "Applications of ML in Computer Networks, Intrusion Detection, IoT Security, Blockchain and Cloud Security",
       "Quantum Computing, Edge Computing, MANET, VANET, V2V, Wireless Sensor Netwroks"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921060932209849_Dr._Geetha_D.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921060932209849_Dr._Geetha_D.jpg",
+    "id": "m17"
   },
   {
     "name": "Dr. Divyaprabha K N",
@@ -193,7 +210,8 @@
       "Artificial Intelligence/Gen AI/Explainable AI",
       "Deep Learning"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20220107071343000883.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220107071343000883.jpg",
+    "id": "m18"
   },
   {
     "name": "Dr.Saritha",
@@ -204,7 +222,8 @@
       "Cloud Computing",
       "IoT and Wireless Sensor Networks"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113220821269_Saritha.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919113220821269_Saritha.jpg",
+    "id": "m19"
   },
   {
     "name": "Dr. R. Prema",
@@ -215,7 +234,8 @@
       "Natural Language Processing",
       "Computer Vision"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m20"
   },
   {
     "name": "Dr. Swati Pratap Jagdale",
@@ -226,7 +246,8 @@
       "Machine learning, Data analytics",
       "Knowledge Graph /Ontologies"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105245511901_Swati_Pratap_Jagdale.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920105245511901_Swati_Pratap_Jagdale.jpg",
+    "id": "m21"
   },
   {
     "name": "Dr.Gauri Sameer Rapate",
@@ -237,7 +258,8 @@
       "Artificial Intelligence/Gen AI/Explainable AI",
       "Cyber security"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070542694208_Gauri_Sameer_Rapate.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921070542694208_Gauri_Sameer_Rapate.jpg",
+    "id": "m22"
   },
   {
     "name": "Dr.Nazmin Begum",
@@ -248,7 +270,8 @@
       "Computer Vision",
       "Natural Language Processing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20220816073651000224.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220816073651000224.jpg",
+    "id": "m23"
   },
   {
     "name": "Dr.Vaishali Shinde",
@@ -259,7 +282,8 @@
       "Deep Learning",
       "Data Analytics and Big data Analytics"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114527821970_New_Project_2.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114527821970_New_Project_2.jpg",
+    "id": "m24"
   },
   {
     "name": "Dr.P KOKILA",
@@ -270,7 +294,8 @@
       "XAI, NLP",
       "Cloud computing, IOT"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m25"
   },
   {
     "name": "Dr.P.Kavitha",
@@ -282,7 +307,8 @@
       "Deep Learning / XAI",
       "Data Science"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m26"
   },
   {
     "name": "Dr. S. Pradeep Kumar Kenny",
@@ -293,7 +319,8 @@
       "IOT",
       "GenAI"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m27"
   },
   {
     "name": "Dr. Richa Sharma",
@@ -304,7 +331,8 @@
       "Artificial Intelligence/Gen AI/Explainable AI",
       "Computer Vision"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104134411620925_staff041124.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20241104134411620925_staff041124.jpg",
+    "id": "m28"
   },
   {
     "name": "Dr. Gamini Joshi",
@@ -316,7 +344,8 @@
       "Machine Learning",
       "AI and Computer networks"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20251016102244341630_New_Project_1.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251016102244341630_New_Project_1.jpg",
+    "id": "m29"
   },
   {
     "name": "Dr. Monika",
@@ -328,7 +357,8 @@
       "AI in Healthcare, Medical Image processing",
       "GenAI, LLM, ML, DL, Optimization Techniques, Image/Video Processing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20250116144501694037_Monika_PES.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20250116144501694037_Monika_PES.jpg",
+    "id": "m30"
   },
   {
     "name": "Dr. Nivedita Kasturi",
@@ -339,7 +369,8 @@
       "Machine Learning ,Multimodal Artificial Intelligence & Intelligent Systems",
       "Sustainable AI, IoT"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919114854537739_Nivedita_Kasturi.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919114854537739_Nivedita_Kasturi.jpg",
+    "id": "m31"
   },
   {
     "name": "Prof. Lakshmi Satya Vani N",
@@ -348,7 +379,8 @@
     "expertise": [
       "Machine Learning"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m32"
   },
   {
     "name": "Dr. M. Shalima Sulthana",
@@ -360,7 +392,8 @@
       "Deep Learning",
       "-"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142822173680.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142822173680.jpg",
+    "id": "m33"
   },
   {
     "name": "Dr.Gokulakrishnan S",
@@ -372,7 +405,8 @@
       "Social Web",
       "Data Science and Data Analytics"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131101772893_New_Project_1.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131101772893_New_Project_1.jpg",
+    "id": "m34"
   },
   {
     "name": "Saravanaraj S",
@@ -383,7 +417,8 @@
       "Cybersecurity",
       "Computer Networks"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m35"
   },
   {
     "name": "Shilpa S",
@@ -395,7 +430,8 @@
       "Data Analytics and Big data Analytics",
       "Deep Learning , Computer vision"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082603629580_Shilpa_S.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921082603629580_Shilpa_S.jpg",
+    "id": "m36"
   },
   {
     "name": "Shruthi L",
@@ -407,7 +443,8 @@
       "Computer Networks,IOT",
       "ML and Cyber security"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120015326284_Shruthi_L.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120015326284_Shruthi_L.jpg",
+    "id": "m37"
   },
   {
     "name": "Prof SWETHA PATIL",
@@ -419,7 +456,8 @@
       "Deep Learning",
       "AI in Agriculture"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920041834513423_23428a.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230920041834513423_23428a.jpg",
+    "id": "m38"
   },
   {
     "name": "Prof.Lenish Pramiee",
@@ -431,7 +469,8 @@
       "Deep Learning",
       "Image/Video Processing,Security"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20240417052232914935_Lenish.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240417052232914935_Lenish.jpg",
+    "id": "m39"
   },
   {
     "name": "NEHA SHARMA",
@@ -443,7 +482,8 @@
       "Computer vision",
       "AI in Agriculture"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20240117124515272352_Neha_Sharma.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240117124515272352_Neha_Sharma.jpg",
+    "id": "m40"
   },
   {
     "name": "Kundhavai K R",
@@ -455,7 +495,8 @@
       "Artificial Intelligence/Gen AI/Explainable AI",
       "LLM/RAG"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m41"
   },
   {
     "name": "Divya Ebenezer Nathaniel",
@@ -466,7 +507,8 @@
       "Machine Learning",
       "Deep Learning"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061117998962_Divya_Ebenezer_Nathaniel.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061117998962_Divya_Ebenezer_Nathaniel.jpg",
+    "id": "m42"
   },
   {
     "name": "Deepti C",
@@ -477,7 +519,8 @@
       "Cyber security",
       "Machine Learning"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120113925271_Deepti_C.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230919120113925271_Deepti_C.jpg",
+    "id": "m43"
   },
   {
     "name": "Ruby Dinakar",
@@ -489,7 +532,8 @@
       "Deep learning /Computer Vision/ Agentic AI",
       "Robotics, IOT, Cloud Computing , Federated Learning"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20220803092054000560.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20220803092054000560.jpg",
+    "id": "m44"
   },
   {
     "name": "NAGALAKSHMI S R",
@@ -501,7 +545,8 @@
       "IoT / Distributed/ safety critical applications",
       "Robotics"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114241914089_New_Project_1.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240829114241914089_New_Project_1.jpg",
+    "id": "m45"
   },
   {
     "name": "Swathi Priya N",
@@ -512,7 +557,8 @@
       "Data Analytics and Big data Analytics",
       "Natural Language Processing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20240807031747019295_New_Project.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20240807031747019295_New_Project.jpg",
+    "id": "m46"
   },
   {
     "name": "Sheela Devi M",
@@ -523,7 +569,8 @@
       "Computer Networks",
       "IoT and Wireless Sensor Networks,Data Mining,machine learning,Cyber Security,ethical Hacking,adhoc networks,VANET,MANET"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921081828614623_Sheela_Devi_M.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921081828614623_Sheela_Devi_M.jpg",
+    "id": "m47"
   },
   {
     "name": "Sowmya A M",
@@ -535,7 +582,8 @@
       "AI in Healthcare",
       "IOT"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131850161275_New_Project.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223131850161275_New_Project.jpg",
+    "id": "m48"
   },
   {
     "name": "Ankita Singhai",
@@ -546,7 +594,8 @@
       "Deep Learning",
       "Artificial Intelligence/Gen AI/Explainable AI"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20251022101811977025_ankitha_1.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20251022101811977025_ankitha_1.jpg",
+    "id": "m49"
   },
   {
     "name": "Senthil Anandhi A",
@@ -557,7 +606,8 @@
       "Deep learning",
       "Computer Vision"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223132102050280_New_Project_2.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260223132102050280_New_Project_2.jpg",
+    "id": "m50"
   },
   {
     "name": "Remya Sivan",
@@ -568,7 +618,8 @@
       "Machine Learning/Deep Learning",
       "Natural Language Processing"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142923725803.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20260410142923725803.jpg",
+    "id": "m51"
   },
   {
     "name": "Shemeema Hashim",
@@ -578,7 +629,8 @@
       "Machine Learning",
       "Natural Language Processing"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m52"
   },
   {
     "name": "Thangamani.R",
@@ -588,7 +640,8 @@
       "Computer Networks",
       "cybersecurity"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m53"
   },
   {
     "name": "Prof.Vinu",
@@ -599,7 +652,8 @@
       "Machine Learning",
       "Cloud Computing"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m54"
   },
   {
     "name": "Prof. Pranjali",
@@ -611,7 +665,8 @@
       "AI in healthcare",
       "Computational Neuroscience"
     ],
-    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061312883603_Pranjali_Swapnil_Thakre.jpg"
+    "photo": "https://staff.pes.edu/media/staff/Uploads/20230921061312883603_Pranjali_Swapnil_Thakre.jpg",
+    "id": "m55"
   },
   {
     "name": "Asha Kumari A",
@@ -622,7 +677,8 @@
       "Federated Learning",
       "Cloud Computing"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m56"
   },
   {
     "name": "Dr. Deena Hijam",
@@ -633,7 +689,8 @@
       "Natural Language Processing",
       "Computer Vision"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m57"
   },
   {
     "name": "Prof. Supreetha S",
@@ -644,6 +701,7 @@
       "AI in Agriculture",
       "IoT, Computer Networks"
     ],
-    "photo": ""
+    "photo": "",
+    "id": "m58"
   }
 ]

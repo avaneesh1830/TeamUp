@@ -62,12 +62,7 @@ const logEvent = (type, msg) => {
   if (db.log.length > 5000) db.log = db.log.slice(-4000); // keep it bounded
 };
 
-// ---------- professors (mentors) ----------
-const PROF_FILE = path.join(__dirname, 'professors.json');
-let professors = [];
-if (fs.existsSync(PROF_FILE)) {
-  professors = JSON.parse(fs.readFileSync(PROF_FILE, 'utf8'));
-}
+// ---------- mentors ----------
 // official mentor list (from the shared faculty-domains sheet)
 const MENTOR_FILE = path.join(__dirname, 'mentors.json');
 let mentors = [];
@@ -249,7 +244,7 @@ function teamView(team, viewer) {
     description: team.description || '',
     branch: team.branch,
     leader: team.leader,
-    mentor: team.mentor ? professors.find((p) => p.id === team.mentor) || null : null,
+    mentor: team.mentor ? mentors.find((m) => m.id === team.mentor) || null : null,
     members: team.members.map((srn) => publicUser(userBySrn(srn))),
     slots: s,
     requested: !!myReq,
@@ -539,11 +534,6 @@ app.delete('/api/account', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- professors ----------
-app.get('/api/professors', auth, (req, res) => {
-  res.json(professors);
-});
-
 // mentor directory from the official faculty-domains sheet
 app.get('/api/mentors', auth, (req, res) => {
   res.json(mentors);
@@ -662,9 +652,9 @@ app.post('/api/teams/:id/mentor', auth, (req, res) => {
   if (professorId === null || professorId === '') {
     team.mentor = null;
   } else {
-    const prof = professors.find((p) => p.id === professorId);
-    if (!prof) return res.status(404).json({ error: 'Professor not found' });
-    team.mentor = prof.id;
+    const m = mentors.find((x) => x.id === professorId);
+    if (!m) return res.status(404).json({ error: 'Mentor not found' });
+    team.mentor = m.id;
   }
   save();
   res.json({ ok: true });

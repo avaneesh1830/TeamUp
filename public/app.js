@@ -30,7 +30,6 @@ const BRANCHES = ['CSE', 'AIML', 'ECE'];
 let token = localStorage.getItem('token');
 let me = null; // { user, team, incoming, outgoing }
 let teams = [];
-let professors = [];
 let activeTab = 'browse'; // browse | students | team | requests | profile
 let filters = { branch: 'ALL', domain: 'ALL', grade: 'ALL', showFull: false, canJoin: false };
 let mentorQuery = '';
@@ -306,7 +305,7 @@ function mentorLine(t) {
   if (t.mentor)
     return `<div class="mentor-line">${profPhoto(t.mentor, 'sm')}
       <span><span class="lbl">Mentor:</span> <strong>${esc(t.mentor.name)}</strong>
-      <span class="mentor-sub">· ${esc(t.mentor.title)}, ${esc(t.mentor.dept)}</span></span></div>`;
+      <span class="mentor-sub">· ${esc(t.mentor.designation || 'Faculty')}</span></span></div>`;
   return `<div class="mentor-line"><span class="lbl">Mentor:</span> <span class="mentor-sub">not chosen yet</span></div>`;
 }
 
@@ -567,19 +566,20 @@ function myTeamTabHtml() {
   if (t.mentor) {
     mentorHtml += `<div class="mentor-row">${profPhoto(t.mentor, 'lg')}
       <div><div class="mentor-name">${esc(t.mentor.name)}</div>
-      <div class="mentor-sub">${esc(t.mentor.title)} · ${esc(t.mentor.dept)}</div></div>
+      <div class="mentor-sub">${esc(t.mentor.designation || 'Faculty')}</div>
+      ${t.mentor.email ? `<a class="gh-chip sm" href="mailto:${esc(t.mentor.email)}">✉️ ${esc(t.mentor.email)}</a>` : ''}</div>
       ${isLeader ? `<button class="btn small danger" data-mentor-remove type="button">Remove</button>` : ''}
     </div>`;
   } else if (isLeader) {
     const q = mentorQuery.toLowerCase();
-    const list = professors.filter((p) => !q || `${p.name} ${p.dept} ${p.title}`.toLowerCase().includes(q));
+    const list = mentorList.filter((p) => !q || `${p.name} ${p.designation} ${(p.expertise || []).join(' ')}`.toLowerCase().includes(q));
     mentorHtml += `<p class="hint">No mentor yet — search a professor by name, or browse the list. You can also do this later.</p>
       <input id="mentorSearch" placeholder="Type a professor's name…" value="${esc(mentorQuery)}" autocomplete="off" />
       <div class="prof-list">${
         list.length
           ? list.map((p) => `<button class="prof-item" data-mentor="${esc(p.id)}" type="button">
               ${profPhoto(p, 'lg')}
-              <span><span class="pi-name">${esc(p.name)}</span><br/><span class="pi-sub">${esc(p.title)} · ${esc(p.dept)}</span></span>
+              <span><span class="pi-name">${esc(p.name)}</span><br/><span class="pi-sub">${esc(p.designation || 'Faculty')}${p.expertise && p.expertise.length ? ' · ' + esc(p.expertise[0]) : ''}</span></span>
             </button>`).join('')
           : `<div class="empty">No professor matches “${esc(mentorQuery)}”</div>`
       }</div>`;
@@ -1202,7 +1202,6 @@ let lastSnapshot = ''; // skip re-rendering when nothing changed (fixes scroll j
 async function refresh() {
   if (!token) return showAuth();
   try {
-    if (professors.length === 0) professors = await api('/professors').catch(() => []);
     if (mentorList.length === 0) mentorList = await api('/mentors').catch(() => []);
     [me, teams] = await Promise.all([api('/me'), api('/teams')]);
     // don't wipe the page while the user is typing in a form
