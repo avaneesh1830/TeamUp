@@ -734,8 +734,8 @@ function mentorsHtml() {
     <div><h2>Mentors</h2><p>Faculty guides with their domain expertise — from the official sheet. Mail the ones matching your team's interests.</p></div>
   </div>
   <div class="card filter-bar fade-up">
-    <span class="lbl">Filter by domain</span>
-    <input id="mQ" style="flex:1;min-width:180px;margin-top:0;width:auto" placeholder="🔎 Type a domain, e.g. blockchain…" value="${esc(mFilters.q)}" autocomplete="off" />
+    <span class="lbl">Search</span>
+    <input id="mQ" style="flex:1;min-width:180px;margin-top:0;width:auto" placeholder="🔎 Search by mentor name or domain, e.g. Prajwala, blockchain…" value="${esc(mFilters.q)}" autocomplete="off" />
     <select id="mDomain">
       <option value="ALL">All domains</option>
       ${opts.map((d) => `<option value="${esc(d)}" ${mFilters.domain === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
