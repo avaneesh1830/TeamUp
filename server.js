@@ -25,6 +25,7 @@ db.users.forEach((u) => {
   if (u.bio === undefined) u.bio = ''; // personal "what I've worked on"
   if (u.email === undefined) u.email = '';
   if (!u.pwChanges) u.pwChanges = []; // timestamps, for the 3-changes-per-day limit
+  if (!u.tokens) { u.tokens = u.token ? [u.token] : []; delete u.token; } // multi-device sessions
   // numbers are now stored as plain 10 digits (no country code)
   if (u.whatsapp && u.whatsapp.length === 12 && u.whatsapp.startsWith('91')) u.whatsapp = u.whatsapp.slice(2);
 });
@@ -131,8 +132,13 @@ async function sendOtpMail(to, code) {
     text: `Your TeamUp password reset OTP is: ${code}\n\nIt expires in 10 minutes. If you didn't request this, just ignore this email.`,
   });
 }
-const otps = {}; // srn -> { code, expires, tries }  (password resets)
-const pendingRegs = {}; // srn -> { user, code, expires, tries }  (registrations awaiting email OTP)
+// OTP stores live in the database so a server restart doesn't strand anyone mid-flow
+if (!db.otps) db.otps = {}; // srn -> { code, expires, tries }  (password resets)
+if (!db.pendingRegs) db.pendingRegs = {}; // srn -> { user, code, expires, tries }  (registrations awaiting email OTP)
+for (const k of Object.keys(db.otps)) if (Date.now() > db.otps[k].expires) delete db.otps[k];
+for (const k of Object.keys(db.pendingRegs)) if (Date.now() > db.pendingRegs[k].expires) delete db.pendingRegs[k];
+const otps = db.otps;
+const pendingRegs = db.pendingRegs;
 const maskEmail = (e) => e.replace(/^(.).*(@.*)$/, '$1•••$2');
 
 // password changes (any method) limited to 3 per day
@@ -144,7 +150,7 @@ function pwChangeAllowed(u) {
 function setPassword(u, password) {
   u.salt = crypto.randomBytes(8).toString('hex');
   u.pwHash = hashPw(password, u.salt);
-  u.token = crypto.randomUUID(); // log out existing sessions
+  u.tokens = []; // log out all sessions everywhere
   u.pwChanges.push(Date.now());
 }
 
@@ -159,9 +165,10 @@ function normWa(x) {
 
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
-  const user = token && db.users.find((u) => u.token === token);
+  const user = token && db.users.find((u) => (u.tokens || []).includes(token));
   if (!user) return res.status(401).json({ error: 'Not logged in' });
   req.user = user;
+  req.token = token;
   next();
 }
 
@@ -268,6 +275,8 @@ app.post('/api/register', (req, res) => {
   if (userBySrn(id)) return res.status(400).json({ error: 'This SRN is already registered' });
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!isEmail(email)) return res.status(400).json({ error: 'Enter a valid email — you need it to reset your password' });
+  if (db.users.some((u) => u.email === email))
+    return res.status(400).json({ error: 'An account with this email already exists' });
   const wa = normWa(req.body.whatsapp);
   if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   const salt = crypto.randomBytes(8).toString('hex');
@@ -285,11 +294,12 @@ app.post('/api/register', (req, res) => {
     pwChanges: [],
     salt,
     pwHash: hashPw(password, salt),
-    token: crypto.randomUUID(),
+    tokens: [crypto.randomUUID()],
   };
   // account is only created after the email OTP is verified
   const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
   pendingRegs[id] = { user, code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
+  save();
   sendOtpMail(email, code).catch((e) => console.error('OTP mail failed:', e.message));
   res.json({ otp: true, email: maskEmail(email) });
 });
@@ -310,7 +320,7 @@ app.post('/api/register/verify', (req, res) => {
   delete pendingRegs[srn];
   logEvent('account_created', `${rec.user.name} (${rec.user.srn}, ${rec.user.branch}) registered (email verified)`);
   save();
-  res.json({ token: rec.user.token });
+  res.json({ token: rec.user.tokens[0] });
 });
 
 app.post('/api/login', (req, res) => {
@@ -318,9 +328,10 @@ app.post('/api/login', (req, res) => {
   const user = userBySrn((srn || '').trim().toUpperCase());
   if (!user || hashPw(password || '', user.salt) !== user.pwHash)
     return res.status(400).json({ error: 'Wrong SRN or password' });
-  user.token = crypto.randomUUID();
+  const t = crypto.randomUUID();
+  user.tokens = [...(user.tokens || []), t].slice(-5); // up to 5 devices at once
   save();
-  res.json({ token: user.token });
+  res.json({ token: t });
 });
 
 // forgot password: step 1 — send an OTP to the account's email.
@@ -331,8 +342,9 @@ app.post('/api/forgot', (req, res) => {
   if (user && user.email && pwChangeAllowed(user)) {
     const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
     otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
-    sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
     logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
+    save();
+    sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
   }
   res.json({ ok: true });
 });
@@ -449,6 +461,8 @@ app.post('/api/profile', auth, (req, res) => {
   if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   const email = String(req.body.email || '').trim().toLowerCase();
   if (email && !isEmail(email)) return res.status(400).json({ error: 'Enter a valid email' });
+  if (email && db.users.some((u) => u.email === email && u.srn !== req.user.srn))
+    return res.status(400).json({ error: 'Another account already uses this email' });
   if (password && !pwChangeAllowed(req.user))
     return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
 
@@ -459,9 +473,8 @@ app.post('/api/profile', auth, (req, res) => {
   req.user.whatsapp = wa;
   if (email) req.user.email = email;
   if (password) {
-    const current = req.user.token;
     setPassword(req.user, password);
-    req.user.token = current; // changing your own password shouldn't log this session out
+    req.user.tokens = [req.token]; // keep only the session that made the change
   }
   save();
   res.json({ ok: true });
@@ -745,6 +758,22 @@ app.post('/api/invites/:id', auth, (req, res) => {
     db.requests.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected'; });
     db.invites.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled'; });
   }
+  save();
+  res.json({ ok: true });
+});
+
+// leader hands the crown to another member
+app.post('/api/teams/:id/transfer', auth, (req, res) => {
+  const team = db.teams.find((t) => t.id === req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (team.leader !== req.user.srn)
+    return res.status(403).json({ error: 'Only the team leader can transfer leadership' });
+  const srn = String(req.body.srn || '').toUpperCase();
+  if (srn === team.leader) return res.status(400).json({ error: 'You are already the leader' });
+  if (!team.members.includes(srn)) return res.status(404).json({ error: 'That student is not in your team' });
+  team.leader = srn;
+  const newLeader = userBySrn(srn);
+  logEvent('leadership_transferred', `${req.user.name} (${req.user.srn}) made ${newLeader.name} (${srn}) leader of team "${team.domains.join(', ')}"`);
   save();
   res.json({ ok: true });
 });

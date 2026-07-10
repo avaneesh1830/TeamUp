@@ -600,7 +600,8 @@ function myTeamTabHtml() {
           m,
           t.leader,
           isLeader && m.srn !== me.user.srn
-            ? `<button class="btn small danger" data-kick="${esc(m.srn)}" type="button">Remove</button>`
+            ? `<button class="btn small" data-crown="${esc(m.srn)}" type="button">👑 Make leader</button>
+               <button class="btn small danger" data-kick="${esc(m.srn)}" type="button">Remove</button>`
             : ''
         )
       )
@@ -1070,6 +1071,18 @@ function bindActions() {
 
   document.querySelectorAll('[data-join]').forEach((b) => {
     b.onclick = () => openJoinModal(b.dataset.join, false);
+  });
+
+  // leader transfers the crown
+  document.querySelectorAll('[data-crown]').forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm(`Make ${b.dataset.crown} the team leader? You will become a regular member.`)) return;
+      try {
+        await api(`/teams/${me.team.id}/transfer`, 'POST', { srn: b.dataset.crown });
+        toast('Leadership transferred 👑', 'ok');
+        refresh();
+      } catch (x) { toast(x.message); }
+    };
   });
 
   // leader removes a member
