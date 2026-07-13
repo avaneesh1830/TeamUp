@@ -76,20 +76,34 @@ Built by [Avaneesh Aroor](https://github.com/avaneesh1830).
 - All user content is HTML-escaped; all links validated server-side
 
 ### ⚡ Built to handle the whole batch
-- Load-tested with **1,000 students and 200 teams**: ~8ms per request,
-  100 concurrent requests in 0.5s
+- Load-tested with **1,600 students and 350 teams**: 20–40ms per request,
+  200 concurrent requests (a signup-deadline traffic spike) served within ~3s
 - gzip compression (the teams payload shrinks ~12×)
-- Crash-safe atomic writes — the database file can never be left half-written
+- SQLite with WAL mode: ACID transactions and indexed queries — verified
+  crash-safe with a `kill -9` mid-write, restarted with zero data loss
 
 ---
 
 ## Tech stack
 
-- **Backend:** Node.js + Express — a single ~500-line server, no external database
-- **Storage:** JSON file (`data.json`), atomic writes, `DATA_DIR` env var for
-  persistent volumes
+- **Backend:** Node.js + Express — a single ~900-line server, no separate database server to run
+- **Storage:** **SQLite** (`teamup.db`) via `better-sqlite3` — a real relational database
+  that lives as one file, same operational simplicity as before but with ACID
+  transactions, indexes, and standard SQL underneath. `DATA_DIR` env var points
+  it at a persistent volume. See [`db.js`](db.js) for the schema and data-access layer.
 - **Frontend:** vanilla HTML/CSS/JS — no framework, no build step
-- **Faculty data:** scraped from [staff.pes.edu](https://staff.pes.edu/atoz/) into `professors.json`
+- **Faculty data:** scraped from [staff.pes.edu](https://staff.pes.edu/atoz/); mentor directory
+  parsed from the official faculty-domains sheet into `mentors.json`
+
+### Why SQLite, not MongoDB
+
+- **No separate server to host** — it's a file, not a service, so there's nothing extra
+  for college IT to install, expose a port for, or maintain (the exact operational
+  overhead that ruled out running a MongoDB server here)
+- **Real relational SQL** — proper tables, foreign keys, joins, ACID transactions —
+  the standard model, not a bespoke format
+- **Portable further** — SQLite exports directly to MySQL/PostgreSQL with zero
+  data-model rework if the college ever wants a full client-server RDBMS instead
 
 ## Run it locally
 
@@ -102,7 +116,15 @@ npm install
 npm start
 ```
 
-Open http://localhost:3000. Data lives in `data.json` (auto-created; delete to reset).
+Open http://localhost:3000. Data lives in `teamup.db` (auto-created; delete to reset).
+
+If you're upgrading from an older copy that used `data.json`, run the one-time
+migration first: `node migrate-json-to-sqlite.js` (safe to run once; it won't
+overwrite an already-populated `teamup.db`).
+
+> **Native module note:** `better-sqlite3` compiles a native binary tied to your
+> exact Node version. If you see a `NODE_MODULE_VERSION` error after switching
+> Node versions (e.g. via `nvm`), run `npm rebuild better-sqlite3`.
 
 ## Run it with Docker
 
@@ -146,7 +168,7 @@ Password changes are limited to 3 per day per account.
 
 > 🌐 **If deployed, the URL will be posted here.**
 
-Needs any host with a persistent disk (it writes `data.json`):
+Needs any host with a persistent disk (it writes `teamup.db`):
 
 - **College server / any Linux box:** `npm install && npm start`
   (set `PORT` and optionally `DATA_DIR`), or run the Docker image above

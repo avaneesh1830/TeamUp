@@ -1,14 +1,27 @@
 # TeamUp — project conventions
 
 Capstone team-formation site for PES ECity (BTech 3rd/4th year). Node.js + Express,
-vanilla HTML/CSS/JS frontend (no build step), JSON-file database.
+vanilla HTML/CSS/JS frontend (no build step), SQLite database.
 
 ## Architecture
 
-- `server.js` — the whole API. All rules are validated **server-side**; the UI only mirrors them.
+- `server.js` — the whole API (routes + business rules). All rules are validated
+  **server-side**; the UI only mirrors them.
+- `db.js` — the SQLite persistence layer (schema + data-access functions). `server.js`
+  works with the same plain JS object shapes as before (user.projects[], team.members[],
+  etc.) — `db.js` reconstructs/persists them via SQL underneath, so route logic didn't
+  need to change when the storage engine did.
+- `teamup.db` — the database (gitignored). **NEVER delete, overwrite, or wipe it without
+  explicit user approval.** WAL mode is on, so `.db-wal`/`.db-shm` sidecar files are
+  also gitignored and part of the live database.
+- `migrate-json-to-sqlite.js` — one-time importer from the old `data.json` format;
+  keep it working in case anyone still has an old JSON-backed deployment to upgrade.
 - `public/` — `index.html`, `app.js`, `style.css`. Material Design 3, green palette, glassmorphism over a nature video.
-- `data.json` — the database (gitignored). **NEVER delete, overwrite, or wipe it without explicit user approval.**
-- `professors.json` — real PES ECity faculty (CSE/AIML/ECE) scraped from staff.pes.edu, used for mentors.
+- `mentors.json` — official mentor directory (name, designation, email, photo, domain
+  expertise) parsed from the shared faculty-domains sheet. `professors.json` is legacy/unused.
+- **Native module note:** `better-sqlite3` has a compiled binary tied to the exact
+  Node version. After any Node version change (nvm switch, etc.), or a
+  `NODE_MODULE_VERSION` crash on startup, run `npm rebuild better-sqlite3`.
 
 ## Team rules (the core invariants — never weaken these)
 
