@@ -1,5 +1,8 @@
 node_modules
 data.json
+teamup.db
+teamup.db-shm
+teamup.db-wal
 .git
 .gitignore
 .DS_Store

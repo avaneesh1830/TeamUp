@@ -4,64 +4,15 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+// ---------- SQLite persistence (see db.js) ----------
+// better-sqlite3 is synchronous: same simple handler style as before,
+// but with ACID transactions and indexed queries underneath.
+const store = require('./db');
+
 const app = express();
 app.use(compression()); // gzip responses — the teams list shrinks ~10x
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// ---------- tiny JSON-file database ----------
-// DATA_DIR lets hosting platforms point this at a persistent volume
-const DATA_FILE = path.join(process.env.DATA_DIR || __dirname, 'data.json');
-let db = { users: [], teams: [], requests: [] };
-if (fs.existsSync(DATA_FILE)) {
-  db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-// migrate older records to the current shape
-db.users.forEach((u) => {
-  if (!u.projects) u.projects = [];
-  if (u.github === undefined) u.github = '';
-  if (!u.domains) u.domains = []; // domains they're interested in working on
-  if (u.whatsapp === undefined) u.whatsapp = '';
-  if (u.bio === undefined) u.bio = ''; // personal "what I've worked on"
-  if (u.email === undefined) u.email = '';
-  if (!u.pwChanges) u.pwChanges = []; // timestamps, for the 3-changes-per-day limit
-  if (!u.tokens) { u.tokens = u.token ? [u.token] : []; delete u.token; } // multi-device sessions
-  // numbers are now stored as plain 10 digits (no country code)
-  if (u.whatsapp && u.whatsapp.length === 12 && u.whatsapp.startsWith('91')) u.whatsapp = u.whatsapp.slice(2);
-});
-(db.requests || []).forEach((r) => {
-  if (r.whatsapp && r.whatsapp.length === 12 && r.whatsapp.startsWith('91')) r.whatsapp = r.whatsapp.slice(2);
-});
-db.teams.forEach((t) => {
-  if (t.mentor === undefined) t.mentor = null;
-  if (t.description === undefined) t.description = '';
-  // teams now have multiple domains
-  if (t.domain && !t.domains) { t.domains = [t.domain]; delete t.domain; }
-  if (!t.domains) t.domains = [];
-  // old per-team member notes become the member's personal bio
-  if (t.memberNotes) {
-    for (const [srn, note] of Object.entries(t.memberNotes)) {
-      const u = db.users.find((x) => x.srn === srn);
-      if (u && !u.bio && note) u.bio = note;
-    }
-    delete t.memberNotes;
-  }
-});
-if (!db.log) db.log = [];
-if (!db.invites) db.invites = []; // leader -> student invitations
-
-// atomic write: never leaves a half-written data.json even if the process dies mid-save
-const save = () => {
-  const tmp = DATA_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
-  fs.renameSync(tmp, DATA_FILE);
-};
-
-// activity log: account creation, team joins/leaves, etc.
-const logEvent = (type, msg) => {
-  db.log.push({ time: new Date().toISOString(), type, msg });
-  if (db.log.length > 5000) db.log = db.log.slice(-4000); // keep it bounded
-};
 
 // ---------- mentors ----------
 // official mentor list (from the shared faculty-domains sheet)
@@ -102,8 +53,7 @@ const DOMAINS = [
 ];
 const hashPw = (pw, salt) => crypto.scryptSync(pw, salt, 32).toString('hex');
 const gradeOf = (cgpa) => (cgpa >= 8 ? 'A' : cgpa >= 7 ? 'B' : 'C');
-const teamOf = (srn) => db.teams.find((t) => t.members.includes(srn));
-const userBySrn = (srn) => db.users.find((u) => u.srn === srn);
+const { userBySrn, teamOf, logEvent } = store;
 const isHttp = (s) => /^https?:\/\/\S+$/i.test(s);
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
@@ -132,13 +82,6 @@ async function sendOtpMail(to, code) {
     text: `Your TeamUp password reset OTP is: ${code}\n\nIt expires in 10 minutes. If you didn't request this, just ignore this email.`,
   });
 }
-// OTP stores live in the database so a server restart doesn't strand anyone mid-flow
-if (!db.otps) db.otps = {}; // srn -> { code, expires, tries }  (password resets)
-if (!db.pendingRegs) db.pendingRegs = {}; // srn -> { user, code, expires, tries }  (registrations awaiting email OTP)
-for (const k of Object.keys(db.otps)) if (Date.now() > db.otps[k].expires) delete db.otps[k];
-for (const k of Object.keys(db.pendingRegs)) if (Date.now() > db.pendingRegs[k].expires) delete db.pendingRegs[k];
-const otps = db.otps;
-const pendingRegs = db.pendingRegs;
 const maskEmail = (e) => e.replace(/^(.).*(@.*)$/, '$1•••$2');
 
 // password changes (any method) limited to 3 per day
@@ -165,7 +108,7 @@ function normWa(x) {
 
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
-  const user = token && db.users.find((u) => (u.tokens || []).includes(token));
+  const user = token && store.userByToken(token);
   if (!user) return res.status(401).json({ error: 'Not logged in' });
   req.user = user;
   req.token = token;
@@ -240,11 +183,7 @@ const publicUser = (u) => ({
 
 function teamView(team, viewer) {
   const s = slotInfo(team);
-  const myReq =
-    viewer &&
-    db.requests.find(
-      (r) => r.teamId === team.id && r.srn === viewer.srn && r.status === 'pending'
-    );
+  const myReq = viewer && store.findPendingRequest(team.id, viewer.srn);
   return {
     id: team.id,
     domains: team.domains,
@@ -275,7 +214,7 @@ app.post('/api/register', (req, res) => {
   if (userBySrn(id)) return res.status(400).json({ error: 'This SRN is already registered' });
   const email = String(req.body.email || '').trim().toLowerCase();
   if (!isEmail(email)) return res.status(400).json({ error: 'Enter a valid email — you need it to reset your password' });
-  if (db.users.some((u) => u.email === email))
+  if (store.emailTaken(email))
     return res.status(400).json({ error: 'An account with this email already exists' });
   const wa = normWa(req.body.whatsapp);
   if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
@@ -291,6 +230,7 @@ app.post('/api/register', (req, res) => {
     github: '',
     domains: [],
     whatsapp: wa,
+    bio: '',
     pwChanges: [],
     salt,
     pwHash: hashPw(password, salt),
@@ -298,8 +238,7 @@ app.post('/api/register', (req, res) => {
   };
   // account is only created after the email OTP is verified
   const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
-  pendingRegs[id] = { user, code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
-  save();
+  store.setPendingReg(id, { user, code, expires: Date.now() + 10 * 60 * 1000, tries: 0 });
   sendOtpMail(email, code).catch((e) => console.error('OTP mail failed:', e.message));
   res.json({ otp: true, email: maskEmail(email) });
 });
@@ -307,19 +246,18 @@ app.post('/api/register', (req, res) => {
 // registration step 2 — verify the OTP, then create the account
 app.post('/api/register/verify', (req, res) => {
   const srn = String(req.body.srn || '').trim().toUpperCase();
-  const rec = pendingRegs[srn];
+  const rec = store.getPendingReg(srn);
   if (!rec) return res.status(400).json({ error: 'Start the registration again' });
-  if (Date.now() > rec.expires) { delete pendingRegs[srn]; return res.status(400).json({ error: 'OTP expired — register again' }); }
-  if (rec.tries >= 5) { delete pendingRegs[srn]; return res.status(400).json({ error: 'Too many wrong attempts — register again' }); }
+  if (Date.now() > rec.expires) { store.deletePendingReg(srn); return res.status(400).json({ error: 'OTP expired — register again' }); }
+  if (rec.tries >= 5) { store.deletePendingReg(srn); return res.status(400).json({ error: 'Too many wrong attempts — register again' }); }
   if (String(req.body.otp || '').trim() !== rec.code) {
-    rec.tries++;
+    store.bumpRegTries(srn);
     return res.status(400).json({ error: 'Wrong OTP' });
   }
-  if (userBySrn(srn)) { delete pendingRegs[srn]; return res.status(400).json({ error: 'This SRN is already registered' }); }
-  db.users.push(rec.user);
-  delete pendingRegs[srn];
+  if (userBySrn(srn)) { store.deletePendingReg(srn); return res.status(400).json({ error: 'This SRN is already registered' }); }
+  store.insertUser(rec.user);
+  store.deletePendingReg(srn);
   logEvent('account_created', `${rec.user.name} (${rec.user.srn}, ${rec.user.branch}) registered (email verified)`);
-  save();
   res.json({ token: rec.user.tokens[0] });
 });
 
@@ -330,7 +268,7 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ error: 'Wrong SRN or password' });
   const t = crypto.randomUUID();
   user.tokens = [...(user.tokens || []), t].slice(-5); // up to 5 devices at once
-  save();
+  store.saveUser(user);
   res.json({ token: t });
 });
 
@@ -341,9 +279,8 @@ app.post('/api/forgot', (req, res) => {
   const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
   if (user && user.email && pwChangeAllowed(user)) {
     const code = '123456'; // TEMP: fixed OTP until the real email API (Postmark/SES) is wired up
-    otps[user.srn] = { code, expires: Date.now() + 10 * 60 * 1000, tries: 0 };
+    store.setOtp(user.srn, code, Date.now() + 10 * 60 * 1000);
     logEvent('password_otp_sent', `Password reset OTP sent for ${user.srn}`);
-    save();
     sendOtpMail(user.email, code).catch((e) => console.error('OTP mail failed:', e.message));
   }
   res.json({ ok: true });
@@ -352,12 +289,12 @@ app.post('/api/forgot', (req, res) => {
 // forgot password: step 2 — verify the OTP and set a new password
 app.post('/api/reset', (req, res) => {
   const user = userBySrn(String(req.body.srn || '').trim().toUpperCase());
-  const rec = user && otps[user.srn];
+  const rec = user && store.getOtp(user.srn);
   if (!rec) return res.status(400).json({ error: 'Request an OTP first' });
-  if (Date.now() > rec.expires) { delete otps[user.srn]; return res.status(400).json({ error: 'OTP expired — request a new one' }); }
-  if (rec.tries >= 5) { delete otps[user.srn]; return res.status(400).json({ error: 'Too many wrong attempts — request a new OTP' }); }
+  if (Date.now() > rec.expires) { store.deleteOtp(user.srn); return res.status(400).json({ error: 'OTP expired — request a new one' }); }
+  if (rec.tries >= 5) { store.deleteOtp(user.srn); return res.status(400).json({ error: 'Too many wrong attempts — request a new OTP' }); }
   if (String(req.body.otp || '').trim() !== rec.code) {
-    rec.tries++;
+    store.bumpOtpTries(user.srn);
     return res.status(400).json({ error: 'Wrong OTP' });
   }
   const { password } = req.body;
@@ -366,9 +303,9 @@ app.post('/api/reset', (req, res) => {
   if (!pwChangeAllowed(user))
     return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
   setPassword(user, password);
-  delete otps[user.srn];
+  store.saveUser(user);
+  store.deleteOtp(user.srn);
   logEvent('password_reset', `${user.name} (${user.srn}) reset their password via OTP`);
-  save();
   res.json({ ok: true });
 });
 
@@ -378,47 +315,39 @@ app.get('/api/me', auth, (req, res) => {
   const team = teamOf(me.srn);
   // any team member can see (and act on) incoming requests
   const incoming = team
-    ? db.requests
-        .filter((r) => r.teamId === team.id && r.status === 'pending')
-        .map((r) => {
-          const candTeam = teamOf(r.srn);
-          return {
-            id: r.id,
-            user: publicUser(userBySrn(r.srn)),
-            whatsapp: r.whatsapp || '',
-            // heads-up for the team: this requester has since joined another team
-            candidateTeam: candTeam ? candTeam.domains.join(' / ') : null,
-          };
-        })
+    ? store.pendingRequestsForTeam(team.id).map((r) => {
+        const candTeam = teamOf(r.srn);
+        return {
+          id: r.id,
+          user: publicUser(userBySrn(r.srn)),
+          whatsapp: r.whatsapp || '',
+          // heads-up for the team: this requester has since joined another team
+          candidateTeam: candTeam ? candTeam.domains.join(' / ') : null,
+        };
+      })
     : [];
-  const outgoing = db.requests
-    .filter((r) => r.srn === me.srn)
-    .map((r) => {
-      const t = db.teams.find((x) => x.id === r.teamId);
-      return { id: r.id, teamId: r.teamId, teamDomain: t ? t.domains.join(' / ') : '(deleted team)', status: r.status };
-    });
+  const outgoing = store.requestsForSrn(me.srn).map((r) => {
+    const t = store.teamById(r.teamId);
+    return { id: r.id, teamId: r.teamId, teamDomain: t ? t.domains.join(' / ') : '(deleted team)', status: r.status };
+  });
   // invitations sent TO me by team leaders
-  const invites = db.invites
-    .filter((i) => i.srn === me.srn)
-    .map((i) => {
-      const t = db.teams.find((x) => x.id === i.teamId);
-      const leader = t && userBySrn(t.leader);
-      return {
-        id: i.id,
-        status: i.status,
-        teamDomain: t ? t.domains.join(' / ') : '(disbanded team)',
-        teamBranch: t ? t.branch : '',
-        leaderName: leader ? leader.name : '',
-      };
-    });
+  const invites = store.invitesForSrn(me.srn).map((i) => {
+    const t = store.teamById(i.teamId);
+    const leader = t && userBySrn(t.leader);
+    return {
+      id: i.id,
+      status: i.status,
+      teamDomain: t ? t.domains.join(' / ') : '(disbanded team)',
+      teamBranch: t ? t.branch : '',
+      leaderName: leader ? leader.name : '',
+    };
+  });
   // invitations my team has sent (visible to every member)
   const sentInvites = team
-    ? db.invites
-        .filter((i) => i.teamId === team.id)
-        .map((i) => {
-          const u = userBySrn(i.srn);
-          return { id: i.id, srn: i.srn, name: u ? u.name : i.srn, status: i.status };
-        })
+    ? store.invitesForTeam(team.id).map((i) => {
+        const u = userBySrn(i.srn);
+        return { id: i.id, srn: i.srn, name: u ? u.name : i.srn, status: i.status };
+      })
     : [];
   res.json({
     user: { ...publicUser(me), cgpa: me.cgpa, email: me.email || '' },
@@ -461,7 +390,7 @@ app.post('/api/profile', auth, (req, res) => {
   if (wa === null) return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
   const email = String(req.body.email || '').trim().toLowerCase();
   if (email && !isEmail(email)) return res.status(400).json({ error: 'Enter a valid email' });
-  if (email && db.users.some((u) => u.email === email && u.srn !== req.user.srn))
+  if (email && store.emailTaken(email, req.user.srn))
     return res.status(400).json({ error: 'Another account already uses this email' });
   if (password && !pwChangeAllowed(req.user))
     return res.status(429).json({ error: 'Password change limit reached (3 per day) — try again tomorrow' });
@@ -476,7 +405,7 @@ app.post('/api/profile', auth, (req, res) => {
     setPassword(req.user, password);
     req.user.tokens = [req.token]; // keep only the session that made the change
   }
-  save();
+  store.saveUser(req.user);
   res.json({ ok: true });
 });
 
@@ -487,7 +416,7 @@ app.post('/api/profile/domains', auth, (req, res) => {
   const invalid = domains.filter((d) => !DOMAINS.includes(d));
   if (invalid.length) return res.status(400).json({ error: `Not in the domain list: ${invalid.join(', ')}` });
   req.user.domains = [...new Set(domains)];
-  save();
+  store.saveUser(req.user);
   res.json({ ok: true });
 });
 
@@ -507,7 +436,7 @@ app.post('/api/profile/projects', auth, (req, res) => {
     description: (description || '').trim(),
     link: (link || '').trim(),
   });
-  save();
+  store.saveUser(req.user);
   res.json({ ok: true });
 });
 
@@ -515,7 +444,7 @@ app.delete('/api/profile/projects/:id', auth, (req, res) => {
   const before = req.user.projects.length;
   req.user.projects = req.user.projects.filter((p) => p.id !== req.params.id);
   if (req.user.projects.length === before) return res.status(404).json({ error: 'Project not found' });
-  save();
+  store.saveUser(req.user);
   res.json({ ok: true });
 });
 
@@ -526,24 +455,20 @@ app.delete('/api/account', auth, (req, res) => {
   if (team) {
     if (team.leader === srn) {
       // leader deleting account disbands the team
-      db.teams = db.teams.filter((t) => t.id !== team.id);
-      db.requests.forEach((r) => {
-        if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
-      });
-      db.invites.forEach((i) => {
-        if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
-      });
+      store.closeTeamRequestsCancelled(team.id);
+      store.closeTeamInvites(team.id);
+      store.deleteTeam.run(team.id);
       logEvent('team_disbanded', `Team "${team.domains.join(', ')}" disbanded (leader ${srn} deleted account)`);
     } else {
       team.members = team.members.filter((s) => s !== srn);
+      store.saveTeam(team);
       logEvent('member_left', `${req.user.name} (${srn}) left team "${team.domains.join(', ')}" (account deleted)`);
     }
   }
-  db.requests = db.requests.filter((r) => r.srn !== srn);
-  db.invites = db.invites.filter((i) => i.srn !== srn);
-  db.users = db.users.filter((u) => u.srn !== srn);
+  store.deleteRequestsForSrn(srn);
+  store.deleteInvitesForSrn(srn);
+  store.deleteUser.run(srn);
   logEvent('account_deleted', `${req.user.name} (${srn}) deleted their account`);
-  save();
   res.json({ ok: true });
 });
 
@@ -559,7 +484,7 @@ app.get('/api/students', auth, (req, res) => {
   const myTeam = teamOf(req.user.srn);
   // any member of a team with an open seat gets invite powers + the eligibility filter
   const canInvite = myTeam && slotInfo(myTeam).remaining > 0;
-  const results = db.users
+  const results = store.allUsers()
     // no search text => directory of students still LOOKING for a team (plus yourself); searching shows everyone
     .filter((u) =>
       q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn) || u.srn === req.user.srn
@@ -582,14 +507,12 @@ app.get('/api/students', auth, (req, res) => {
       // if the searcher's team has open seats, say whether this student could join it
       if (canInvite && !t && u.srn !== req.user.srn) {
         out.eligibleForMyTeam = joinBlock(myTeam, u);
-        out.invited = !!db.invites.find((i) => i.teamId === myTeam.id && i.srn === u.srn && i.status === 'pending');
+        out.invited = !!store.findPendingInvite(myTeam.id, u.srn);
       }
       // if the student is in a team, say whether the searcher could join that team
       if (t && !t.members.includes(req.user.srn)) {
         out.team.joinBlock = myTeam ? 'You are already in a team' : joinBlock(t, req.user);
-        out.team.requested = !!db.requests.find(
-          (r) => r.teamId === t.id && r.srn === req.user.srn && r.status === 'pending'
-        );
+        out.team.requested = !!store.findPendingRequest(t.id, req.user.srn);
       }
       return out;
     });
@@ -598,12 +521,12 @@ app.get('/api/students', auth, (req, res) => {
 
 // ---------- activity log (accounts made, joins, leaves) ----------
 app.get('/api/log', auth, (req, res) => {
-  res.json(db.log.slice(-200).reverse());
+  res.json(store.recentLog(200));
 });
 
 // ---------- teams ----------
 app.get('/api/teams', auth, (req, res) => {
-  res.json(db.teams.map((t) => teamView(t, req.user)));
+  res.json(store.allTeams().map((t) => teamView(t, req.user)));
 });
 
 app.post('/api/teams', auth, (req, res) => {
@@ -624,22 +547,21 @@ app.post('/api/teams', auth, (req, res) => {
     members: [req.user.srn],
     mentor: null,
   };
-  db.teams.push(team);
+  store.insertTeam(team);
   logEvent('team_created', `${req.user.name} (${req.user.srn}) created team "${domains.join(', ')}" [${team.branch}]`);
-  save();
   res.json(teamView(team, req.user));
 });
 
 // team description — leader only
 app.post('/api/teams/:id/description', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (team.leader !== req.user.srn)
     return res.status(403).json({ error: 'Only the team leader can write the team description' });
   const text = (req.body.text || '').trim();
   if (text.length > 500) return res.status(400).json({ error: 'Description too long (max 500 chars)' });
   team.description = text;
-  save();
+  store.saveTeam(team);
   res.json({ ok: true });
 });
 
@@ -651,13 +573,13 @@ app.post('/api/profile/about', auth, (req, res) => {
   if (url && !isHttp(url)) return res.status(400).json({ error: 'Link must start with http:// or https://' });
   req.user.bio = bio;
   req.user.github = url;
-  save();
+  store.saveUser(req.user);
   res.json({ ok: true });
 });
 
 // leader picks / changes / removes the mentor (professorId null clears)
 app.post('/api/teams/:id/mentor', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (team.leader !== req.user.srn)
     return res.status(403).json({ error: 'Only the team leader can choose the mentor' });
@@ -669,40 +591,37 @@ app.post('/api/teams/:id/mentor', auth, (req, res) => {
     if (!m) return res.status(404).json({ error: 'Mentor not found' });
     team.mentor = m.id;
   }
-  save();
+  store.saveTeam(team);
   res.json({ ok: true });
 });
 
 app.post('/api/teams/:id/join', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (team.members.includes(req.user.srn))
     return res.status(400).json({ error: "This is your own team — you can't request to join it" });
   if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
   const block = joinBlock(team, req.user);
   if (block) return res.status(400).json({ error: block });
-  const dup = db.requests.find(
-    (r) => r.teamId === team.id && r.srn === req.user.srn && r.status === 'pending'
-  );
-  if (dup) return res.status(400).json({ error: 'Request already sent' });
+  if (store.findPendingRequest(team.id, req.user.srn))
+    return res.status(400).json({ error: 'Request already sent' });
   // optional WhatsApp number so the leader can chat before accepting
   const wa = normWa(req.body.whatsapp);
   if (wa === null)
     return res.status(400).json({ error: 'Enter a valid 10-digit WhatsApp number' });
-  db.requests.push({
+  store.insertRequest({
     id: crypto.randomUUID(),
     teamId: team.id,
     srn: req.user.srn,
     status: 'pending',
     whatsapp: wa,
   });
-  save();
   res.json({ ok: true });
 });
 
 // any team member invites a student to their team (branch + grade + gender rules enforced)
 app.post('/api/teams/:id/invite', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (!team.members.includes(req.user.srn))
     return res.status(403).json({ error: 'Only members of this team can invite students' });
@@ -712,59 +631,56 @@ app.post('/api/teams/:id/invite', auth, (req, res) => {
   if (teamOf(cand.srn)) return res.status(400).json({ error: 'This student is already in a team' });
   const block = joinBlock(team, cand); // same branch / grade slot / gender slot checks
   if (block) return res.status(400).json({ error: block });
-  const dup = db.invites.find((i) => i.teamId === team.id && i.srn === cand.srn && i.status === 'pending');
-  if (dup) return res.status(400).json({ error: 'Already invited — waiting for their reply' });
-  db.invites.push({ id: crypto.randomUUID(), teamId: team.id, srn: cand.srn, status: 'pending' });
+  if (store.findPendingInvite(team.id, cand.srn))
+    return res.status(400).json({ error: 'Already invited — waiting for their reply' });
+  store.insertInvite({ id: crypto.randomUUID(), teamId: team.id, srn: cand.srn, status: 'pending' });
   logEvent('invite_sent', `${req.user.name} (${req.user.srn}) invited ${cand.name} (${cand.srn}) to team "${team.domains.join(', ')}"`);
-  save();
   res.json({ ok: true });
 });
 
 // invited student accepts / rejects · the inviting team can cancel
 app.post('/api/invites/:id', auth, (req, res) => {
-  const inv = db.invites.find((x) => x.id === req.params.id);
+  const inv = store.inviteById(req.params.id);
   if (!inv || inv.status !== 'pending') return res.status(404).json({ error: 'Invitation not found' });
 
   // any member of the inviting team can withdraw the invite
   if (req.body.action === 'cancel') {
-    const t = db.teams.find((x) => x.id === inv.teamId);
+    const t = store.teamById(inv.teamId);
     if (!t || !t.members.includes(req.user.srn))
       return res.status(403).json({ error: 'Only the inviting team can cancel this' });
-    inv.status = 'cancelled';
-    save();
+    store.updateInviteStatus(inv.id, 'cancelled');
     return res.json({ ok: true });
   }
 
   if (inv.srn !== req.user.srn) return res.status(403).json({ error: 'This invitation is not for you' });
 
   if (req.body.action === 'reject') {
-    inv.status = 'rejected';
-    save();
+    store.updateInviteStatus(inv.id, 'rejected');
     return res.json({ ok: true });
   }
 
-  const team = db.teams.find((t) => t.id === inv.teamId);
-  if (!team) { inv.status = 'cancelled'; save(); return res.status(400).json({ error: 'That team no longer exists' }); }
+  const team = store.teamById(inv.teamId);
+  if (!team) { store.updateInviteStatus(inv.id, 'cancelled'); return res.status(400).json({ error: 'That team no longer exists' }); }
   if (teamOf(req.user.srn)) return res.status(400).json({ error: 'You are already in a team' });
   const block = joinBlock(team, req.user);
   if (block) return res.status(400).json({ error: `Cannot join: ${block}` });
 
   team.members.push(req.user.srn);
-  inv.status = 'accepted';
+  store.saveTeam(team);
+  store.updateInviteStatus(inv.id, 'accepted');
   logEvent('member_joined', `${req.user.name} (${req.user.srn}) joined team "${team.domains.join(', ')}" (accepted invitation)${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
   // NOTE: their other pending invites/requests stay alive on purpose
   // if team is now full, close this team's remaining queue
   if (team.members.length === TEAM_SIZE) {
-    db.requests.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected'; });
-    db.invites.forEach((x) => { if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled'; });
+    store.closeTeamRequests(team.id);
+    store.closeTeamInvites(team.id);
   }
-  save();
   res.json({ ok: true });
 });
 
 // leader hands the crown to another member
 app.post('/api/teams/:id/transfer', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (team.leader !== req.user.srn)
     return res.status(403).json({ error: 'Only the team leader can transfer leadership' });
@@ -772,15 +688,15 @@ app.post('/api/teams/:id/transfer', auth, (req, res) => {
   if (srn === team.leader) return res.status(400).json({ error: 'You are already the leader' });
   if (!team.members.includes(srn)) return res.status(404).json({ error: 'That student is not in your team' });
   team.leader = srn;
+  store.saveTeam(team);
   const newLeader = userBySrn(srn);
   logEvent('leadership_transferred', `${req.user.name} (${req.user.srn}) made ${newLeader.name} (${srn}) leader of team "${team.domains.join(', ')}"`);
-  save();
   res.json({ ok: true });
 });
 
 // leader removes a member; their team description goes with them
 app.post('/api/teams/:id/kick', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team) return res.status(404).json({ error: 'Team not found' });
   if (team.leader !== req.user.srn)
     return res.status(403).json({ error: 'Only the team leader can remove members' });
@@ -790,32 +706,30 @@ app.post('/api/teams/:id/kick', auth, (req, res) => {
   if (!team.members.includes(srn)) return res.status(404).json({ error: 'That student is not in your team' });
   const member = userBySrn(srn);
   team.members = team.members.filter((s) => s !== srn);
+  store.saveTeam(team);
   logEvent('member_removed', `${member.name} (${srn}) was removed from team "${team.domains.join(', ')}" by the leader`);
-  save();
   res.json({ ok: true });
 });
 
 // accept / reject (any team member) · cancel (the requester themselves)
 app.post('/api/requests/:id', auth, (req, res) => {
   const { action } = req.body; // 'accept' | 'reject' | 'cancel'
-  const r = db.requests.find((x) => x.id === req.params.id);
+  const r = store.requestById(req.params.id);
   if (!r || r.status !== 'pending') return res.status(404).json({ error: 'Request not found' });
 
   // a student can cancel their own pending request
   if (action === 'cancel') {
     if (r.srn !== req.user.srn) return res.status(403).json({ error: 'Only the requester can cancel this' });
-    r.status = 'cancelled';
-    save();
+    store.updateRequestStatus(r.id, 'cancelled');
     return res.json({ ok: true });
   }
 
-  const team = db.teams.find((t) => t.id === r.teamId);
+  const team = store.teamById(r.teamId);
   if (!team || !team.members.includes(req.user.srn))
     return res.status(403).json({ error: 'Only members of this team can do this' });
 
   if (action === 'reject') {
-    r.status = 'rejected';
-    save();
+    store.updateRequestStatus(r.id, 'rejected');
     return res.json({ ok: true });
   }
 
@@ -827,43 +741,35 @@ app.post('/api/requests/:id', auth, (req, res) => {
   if (block) return res.status(400).json({ error: `Cannot accept: ${block}` });
 
   team.members.push(candidate.srn);
-  r.status = 'accepted';
+  store.saveTeam(team);
+  store.updateRequestStatus(r.id, 'accepted');
   logEvent('member_joined', `${candidate.name} (${candidate.srn}) joined team "${team.domains.join(', ')}" (accepted by ${req.user.srn})${team.members.length === TEAM_SIZE ? ' — team complete' : ''}`);
   // NOTE: their other pending requests/invites are intentionally kept alive
   // if team is now full, close this team's own waiting queue
   if (team.members.length === TEAM_SIZE) {
-    db.requests.forEach((x) => {
-      if (x.teamId === team.id && x.status === 'pending') x.status = 'rejected';
-    });
-    db.invites.forEach((x) => {
-      if (x.teamId === team.id && x.status === 'pending') x.status = 'cancelled';
-    });
+    store.closeTeamRequests(team.id);
+    store.closeTeamInvites(team.id);
   }
-  save();
   res.json({ ok: true });
 });
 
 // member leaves; leader leaving disbands the team
 app.post('/api/teams/:id/leave', auth, (req, res) => {
-  const team = db.teams.find((t) => t.id === req.params.id);
+  const team = store.teamById(req.params.id);
   if (!team || !team.members.includes(req.user.srn))
     return res.status(400).json({ error: 'You are not in this team' });
   if (team.leader === req.user.srn) {
-    db.teams = db.teams.filter((t) => t.id !== team.id);
-    db.requests.forEach((r) => {
-      if (r.teamId === team.id && r.status === 'pending') r.status = 'cancelled';
-    });
-    db.invites.forEach((i) => {
-      if (i.teamId === team.id && i.status === 'pending') i.status = 'cancelled';
-    });
+    store.closeTeamRequestsCancelled(team.id);
+    store.closeTeamInvites(team.id);
+    store.deleteTeam.run(team.id);
     logEvent('team_disbanded', `${req.user.name} (${req.user.srn}) disbanded team "${team.domains.join(', ')}"`);
   } else {
     team.members = team.members.filter((s) => s !== req.user.srn);
+    store.saveTeam(team);
     logEvent('member_left', `${req.user.name} (${req.user.srn}) left team "${team.domains.join(', ')}"`);
   }
-  save();
   res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Team Finder running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Team Finder running on http://localhost:${PORT} (SQLite)`));

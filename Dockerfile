@@ -1,5 +1,7 @@
 # TeamUp — BTech project team finder
-FROM node:22-alpine
+# node:22-slim (Debian/glibc), not alpine: better-sqlite3 ships prebuilt binaries
+# for glibc Linux, avoiding a native compile toolchain in the image.
+FROM node:22-slim
 
 WORKDIR /app
 
@@ -10,7 +12,7 @@ RUN npm ci --omit=dev
 # copy the rest of the app
 COPY . .
 
-# store the database on a volume so accounts survive container restarts
+# store the SQLite database on a volume so accounts survive container restarts
 ENV DATA_DIR=/data
 RUN mkdir -p /data
 VOLUME /data
