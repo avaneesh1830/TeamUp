@@ -142,6 +142,43 @@ function emailTaken(email, excludeSrn) {
     .get(email, excludeSrn || '');
 }
 
+// ---- fast student search: column filters run in SQL; only the returned page is hydrated ----
+const stSrnsInTeams = db.prepare('SELECT DISTINCT srn FROM team_members');
+function srnsInTeams() {
+  return new Set(stSrnsInTeams.all().map((r) => r.srn));
+}
+
+// returns RAW user rows (branch/gender/cgpa/name/srn present, but NOT tokens/domains/projects)
+// applying every filter that can be expressed in SQL. grade maps to cgpa ranges.
+function searchUserRows({ q, branch, gender, grade, domain }) {
+  const where = [];
+  const args = [];
+  if (q) {
+    const like = '%' + String(q).toLowerCase() + '%';
+    where.push('(LOWER(name) LIKE ? OR LOWER(srn) LIKE ?)');
+    args.push(like, like);
+  }
+  if (branch) { where.push('branch = ?'); args.push(branch); }
+  if (gender) { where.push('gender = ?'); args.push(gender); }
+  if (grade === 'A') where.push('cgpa >= 8');
+  else if (grade === 'B') where.push('cgpa >= 7 AND cgpa < 8');
+  else if (grade === 'C') where.push('cgpa < 7');
+  if (domain) { where.push('srn IN (SELECT srn FROM user_domains WHERE domain = ?)'); args.push(domain); }
+  const sql = 'SELECT * FROM users' + (where.length ? ' WHERE ' + where.join(' AND ') : '');
+  return db.prepare(sql).all(...args);
+}
+
+// attach domains + projects to a raw row so publicUser() can consume it — call ONLY on the
+// small returned page, never on the full candidate set.
+function attachProfile(row) {
+  return {
+    srn: row.srn, name: row.name, gender: row.gender, branch: row.branch, cgpa: row.cgpa,
+    email: row.email, whatsapp: row.whatsapp, bio: row.bio, github: row.github,
+    domains: stDomains.all(row.srn).map((r) => r.domain),
+    projects: stProjects.all(row.srn),
+  };
+}
+
 const stInsertUser = db.prepare(`
   INSERT INTO users (srn, name, gender, branch, cgpa, email, whatsapp, bio, github, salt, pw_hash)
   VALUES (@srn, @name, @gender, @branch, @cgpa, @email, @whatsapp, @bio, @github, @salt, @pwHash)
@@ -400,6 +437,7 @@ stRegPrune.run(Date.now());
 
 module.exports = {
   userBySrn, userByToken, allUsers, emailTaken, insertUser, saveUser, deleteUser,
+  srnsInTeams, searchUserRows, attachProfile,
   teamById, teamOf, allTeams, insertTeam, saveTeam, deleteTeam,
   requestById, pendingRequestsForTeam, requestsForSrn, findPendingRequest, insertRequest, updateRequestStatus, closeTeamRequests,
   closeTeamRequestsCancelled, deleteRequestsForSrn, deleteInvitesForSrn,

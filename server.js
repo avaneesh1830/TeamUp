@@ -154,13 +154,13 @@ function slotInfo(team) {
 // CSE and AIML are computing branches that may combine in one team
 const branchesCombine = (a, b) => a === b || (['CSE', 'AIML'].includes(a) && ['CSE', 'AIML'].includes(b));
 
-// null if user can join, otherwise a reason string
-function joinBlock(team, user) {
+// null if user can join, otherwise a reason string.
+// `s` (slot info) can be passed in to avoid recomputing it per candidate in bulk loops.
+function joinBlock(team, user, s = slotInfo(team)) {
   if (!branchesCombine(user.branch, team.branch))
     return team.branch === 'ECE'
       ? 'Only ECE students can join this team'
       : 'Only CSE / AIML students can join this team';
-  const s = slotInfo(team);
   if (s.remaining === 0) return 'Team is full';
   const g = gradeOf(user.cgpa);
   if (!s.openGrades.includes(g))
@@ -479,43 +479,47 @@ app.get('/api/mentors', auth, (req, res) => {
 
 // ---------- student directory (all students, alphabetical, filterable) ----------
 app.get('/api/students', auth, (req, res) => {
-  const q = (req.query.q || '').trim().toLowerCase();
+  const q = (req.query.q || '').trim();
   const { gender, grade, domain, branch, eligible } = req.query;
   const myTeam = teamOf(req.user.srn);
-  // any member of a team with an open seat gets invite powers + the eligibility filter
-  const canInvite = myTeam && slotInfo(myTeam).remaining > 0;
-  const results = store.allUsers()
-    // no search text => directory of students still LOOKING for a team (plus yourself); searching shows everyone
-    .filter((u) =>
-      q ? u.name.toLowerCase().includes(q) || u.srn.toLowerCase().includes(q) : !teamOf(u.srn) || u.srn === req.user.srn
-    )
-    .filter((u) => !branch || u.branch === branch)
-    .filter((u) => !gender || u.gender === gender)
-    .filter((u) => !grade || gradeOf(u.cgpa) === grade)
-    .filter((u) => !domain || (u.domains || []).includes(domain))
-    // "eligible for my team": passes every rule — branch, grade slot, gender slot
+  // compute my team's open-slot info ONCE, reused for canInvite + eligibility + per-result annotation
+  const mySlots = myTeam ? slotInfo(myTeam) : null;
+  const canInvite = myTeam && mySlots.remaining > 0;
+
+  // 1) column filters run in SQL — returns raw rows (no per-row hydration)
+  const rows = store.searchUserRows({ q, branch, gender, grade, domain });
+  // 2) team membership resolved from one query, not one-per-user
+  const inTeam = store.srnsInTeams();
+
+  const filtered = rows
+    // no search text => students still LOOKING for a team (plus yourself); searching shows everyone
+    .filter((u) => (q ? true : !inTeam.has(u.srn) || u.srn === req.user.srn))
+    // "eligible for my team": passes every rule — branch, grade slot, gender slot (all from the raw row)
     .filter(
       (u) =>
         eligible !== '1' ||
-        (myTeam && u.srn !== req.user.srn && !teamOf(u.srn) && joinBlock(myTeam, u) === null)
+        (myTeam && u.srn !== req.user.srn && !inTeam.has(u.srn) && joinBlock(myTeam, u, mySlots) === null)
     )
     .sort((a, b) => a.name.localeCompare(b.name)) // alphabetical
-    .slice(0, 500)
-    .map((u) => {
-      const t = teamOf(u.srn);
-      const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domains.join(' / '), branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
-      // if the searcher's team has open seats, say whether this student could join it
-      if (canInvite && !t && u.srn !== req.user.srn) {
-        out.eligibleForMyTeam = joinBlock(myTeam, u);
-        out.invited = !!store.findPendingInvite(myTeam.id, u.srn);
-      }
-      // if the student is in a team, say whether the searcher could join that team
-      if (t && !t.members.includes(req.user.srn)) {
-        out.team.joinBlock = myTeam ? 'You are already in a team' : joinBlock(t, req.user);
-        out.team.requested = !!store.findPendingRequest(t.id, req.user.srn);
-      }
-      return out;
-    });
+    .slice(0, 500);
+
+  // 3) hydrate + annotate ONLY the returned page
+  const results = filtered.map((row) => {
+    const u = store.attachProfile(row);
+    const t = inTeam.has(u.srn) ? teamOf(u.srn) : null;
+    const out = { ...publicUser(u), team: t ? { id: t.id, domain: t.domains.join(' / '), branch: t.branch, full: t.members.length === TEAM_SIZE } : null };
+    // if the searcher's team has open seats, say whether this student could join it
+    if (canInvite && !t && u.srn !== req.user.srn) {
+      out.eligibleForMyTeam = joinBlock(myTeam, u, mySlots);
+      out.invited = !!store.findPendingInvite(myTeam.id, u.srn);
+    }
+    // if the student is in a team, say whether the searcher could join that team
+    if (t && !t.members.includes(req.user.srn)) {
+      out.team.joinBlock = myTeam ? 'You are already in a team' : joinBlock(t, req.user);
+      out.team.requested = !!store.findPendingRequest(t.id, req.user.srn);
+    }
+    return out;
+  });
   res.json(results);
 });
 
