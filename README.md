@@ -164,9 +164,20 @@ SMTP_PASS=your-app-password
 Without them the server runs in dev mode and prints OTPs to its console.
 Password changes are limited to 3 per day per account.
 
+## ✨ AI Assistant (optional)
+
+A built-in chatbot tab answers "which teams work on FinTech?", "which team is
+Priya in?" and "suggest mentors for Blockchain" — powered by a small local LLM
+(Ollama + Qwen) using **tool calling over the live database**, so answers are
+always real data, never hallucinated. Needs Ollama running (`OLLAMA_URL`);
+without it the tab shows an offline notice and everything else works normally.
+Setup: see [DEPLOY.md](DEPLOY.md).
+
 ## Deployment
 
 > 🌐 **If deployed, the URL will be posted here.**
+>
+> Full college-server guide: **[DEPLOY.md](DEPLOY.md)**
 
 Needs any host with a persistent disk (it writes `teamup.db`):
 

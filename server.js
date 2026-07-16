@@ -775,5 +775,155 @@ app.post('/api/teams/:id/leave', auth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- AI assistant: tool-calling chatbot over live data ----------
+// The LLM never memorizes anything — it picks one of three tools, the server runs
+// the real query against SQLite/mentors.json, and the model phrases the result.
+// Point OLLAMA_URL at wherever Ollama runs (college server: http://localhost:11434).
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:4b';
+
+const CHAT_SYSTEM_PROMPT = `You are the TeamUp Assistant for PES University's Capstone 2026-28 team-formation portal.
+You help students with exactly three things: finding project teams by domain, looking up which team a student is in, and suggesting faculty mentors for a domain.
+ALWAYS use the provided tools to get live data. NEVER invent teams, students, mentors or email addresses. If a tool returns an empty list, say you found nothing and suggest the Browse Teams / Students / Mentors tabs.
+Team rules, if asked: teams of exactly 4; the grade mix must be one of AABC, ABBC, ABCC, AACC or BBCC (A = CGPA 8+, B = 7-7.99, C = below 7); CSE and AIML students can combine, ECE teams are ECE-only; mixed-gender teams are preferred but not required.
+Keep replies short — a couple of sentences or a compact list. Never reveal anyone's exact CGPA.`;
+
+const CHAT_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'search_teams',
+      description: 'Find project teams, optionally filtered by a domain keyword (e.g. "fintech", "machine learning") and/or branch. Set only_open=true to return only teams that still have free seats.',
+      parameters: {
+        type: 'object',
+        properties: {
+          domain: { type: 'string', description: 'domain keyword to match against team domains' },
+          branch: { type: 'string', enum: ['CSE', 'AIML', 'ECE'] },
+          only_open: { type: 'boolean', description: 'true = only teams with seats left' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'find_student',
+      description: 'Look up a student by (part of) their name or SRN and see which team they are in, if any.',
+      parameters: {
+        type: 'object',
+        properties: { name_or_srn: { type: 'string' } },
+        required: ['name_or_srn'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'recommend_mentors',
+      description: 'Suggest faculty mentors whose domain expertise matches a given domain keyword.',
+      parameters: {
+        type: 'object',
+        properties: { domain: { type: 'string' } },
+        required: ['domain'],
+      },
+    },
+  },
+];
+
+const CHAT_TOOL_IMPL = {
+  search_teams({ domain, branch, only_open }) {
+    const kw = (domain || '').trim().toLowerCase();
+    return store.allTeams()
+      .filter((t) => !branch || t.branch === branch)
+      .filter((t) => !kw || t.domains.some((d) => d.toLowerCase().includes(kw)))
+      .map((t) => {
+        const s = slotInfo(t);
+        return {
+          domains: t.domains,
+          branch: t.branch,
+          description: (t.description || '').slice(0, 120),
+          members: t.members.map((srn) => { const u = userBySrn(srn); return u ? u.name : srn; }),
+          seats_left: s.remaining,
+          open_grade_slots: s.openGrades,
+        };
+      })
+      .filter((t) => !only_open || t.seats_left > 0)
+      .slice(0, 8);
+  },
+  find_student({ name_or_srn }) {
+    return store.searchUserRows({ q: (name_or_srn || '').trim() })
+      .slice(0, 5)
+      .map((row) => {
+        const u = store.attachProfile(row);
+        const t = teamOf(u.srn);
+        return {
+          name: u.name,
+          srn: u.srn,
+          branch: u.branch,
+          grade: gradeOf(u.cgpa),
+          interested_domains: u.domains,
+          team: t
+            ? { domains: t.domains, branch: t.branch, seats_left: TEAM_SIZE - t.members.length }
+            : 'not in any team yet',
+        };
+      });
+  },
+  recommend_mentors({ domain }) {
+    const kw = (domain || '').trim().toLowerCase();
+    return mentors
+      .filter((m) => ((m.expertise || []).join(' ') + ' ' + m.name).toLowerCase().includes(kw))
+      .slice(0, 6)
+      .map((m) => ({
+        name: m.name,
+        designation: m.designation || 'Faculty',
+        email: m.email || 'no email listed',
+        expertise: (m.expertise || []).map((e) => e.slice(0, 80)),
+      }));
+  },
+};
+
+app.post('/api/chat', auth, async (req, res) => {
+  // keep only clean {role, content} pairs from the client, last 10 turns
+  const history = (Array.isArray(req.body.messages) ? req.body.messages : [])
+    .filter((m) => m && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string')
+    .slice(-10)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 1000) }));
+  if (!history.length || history[history.length - 1].role !== 'user')
+    return res.status(400).json({ error: 'Send at least one user message' });
+
+  const messages = [{ role: 'system', content: CHAT_SYSTEM_PROMPT }, ...history];
+  try {
+    for (let round = 0; round < 4; round++) {
+      const r = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: OLLAMA_MODEL, messages, tools: CHAT_TOOLS, stream: false, think: false }),
+      });
+      if (!r.ok) throw new Error(`ollama http ${r.status}`);
+      const data = await r.json();
+      const msg = data.message || {};
+      if (msg.tool_calls && msg.tool_calls.length) {
+        messages.push(msg);
+        for (const tc of msg.tool_calls) {
+          const name = tc.function && tc.function.name;
+          let args = (tc.function && tc.function.arguments) || {};
+          if (typeof args === 'string') { try { args = JSON.parse(args); } catch { args = {}; } }
+          const impl = CHAT_TOOL_IMPL[name];
+          const result = impl ? impl(args) : { error: `unknown tool ${name}` };
+          messages.push({ role: 'tool', tool_name: name, content: JSON.stringify(result) });
+        }
+        continue; // let the model read the tool results and answer
+      }
+      // strip qwen3 thinking blocks defensively
+      const text = String(msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      return res.json({ reply: text || "I couldn't come up with an answer — try rephrasing?" });
+    }
+    res.json({ reply: 'That needed too many lookups — try a simpler question.' });
+  } catch (e) {
+    console.error('chat failed:', e.message);
+    res.status(503).json({ error: 'The AI assistant is offline right now — the rest of TeamUp works normally.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Team Finder running on http://localhost:${PORT} (SQLite)`));

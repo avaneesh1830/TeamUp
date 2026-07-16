@@ -342,11 +342,12 @@ function render() {
     badge.classList.remove('hidden');
   } else badge.classList.add('hidden');
 
-  const views = { browse: browseHtml, students: studentsHtml, mentors: mentorsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml, rules: rulesHtml };
+  const views = { browse: browseHtml, students: studentsHtml, mentors: mentorsHtml, team: myTeamTabHtml, requests: requestsHtml, profile: profileHtml, chat: chatHtml, rules: rulesHtml };
   $('content').innerHTML = views[activeTab]();
   bindActions();
   if (activeTab === 'students') searchStudents(); // directory loads immediately
   if (activeTab === 'mentors') renderMentors();
+  if (activeTab === 'chat') { const log = $('chatLog'); if (log) log.scrollTop = log.scrollHeight; }
 }
 
 // ---------- tab: browse teams ----------
@@ -777,6 +778,51 @@ function renderMentors() {
     : `<div class="card"><div class="empty"><span class="big">🧑‍🏫</span>No mentor matches that domain.</div></div>`;
 }
 
+// ---------- tab: AI assistant ----------
+let chatHistory = []; // [{role:'user'|'assistant', content}]
+let chatBusy = false;
+
+function chatBubble(m) {
+  return `<div class="bubble ${m.role === 'user' ? 'user' : 'bot'}">${esc(m.content)}</div>`;
+}
+
+function chatHtml() {
+  return `<div class="section-head fade-up">
+    <div><h2>✨ Assistant</h2><p>Ask about teams, classmates, or which mentor fits your domain — answers come from live TeamUp data</p></div>
+  </div>
+  <div class="card chat-card">
+    <div id="chatLog" class="chat-log">
+      <div class="bubble bot">Hi ${esc(me.user.name.split(' ')[0])} 👋 Try asking me:</div>
+      <div class="chips" style="margin:4px 0 10px">
+        <button class="chip chat-suggest" type="button">Any FinTech teams with a seat left?</button>
+        <button class="chip chat-suggest" type="button">Which team is Priya in?</button>
+        <button class="chip chat-suggest" type="button">Suggest mentors for Blockchain</button>
+      </div>
+      ${chatHistory.map(chatBubble).join('')}
+      ${chatBusy ? '<div class="bubble bot typing">thinking…</div>' : ''}
+    </div>
+    <form id="chatForm" class="inline-form" style="margin-top:12px">
+      <input id="chatInput" placeholder="Ask the assistant…" autocomplete="off" maxlength="500" ${chatBusy ? 'disabled' : ''} />
+      <button class="btn primary" type="submit" ${chatBusy ? 'disabled' : ''}>Send</button>
+    </form>
+  </div>`;
+}
+
+async function sendChat(text) {
+  if (!text.trim() || chatBusy) return;
+  chatHistory.push({ role: 'user', content: text.trim() });
+  chatBusy = true;
+  render();
+  try {
+    const r = await api('/chat', 'POST', { messages: chatHistory });
+    chatHistory.push({ role: 'assistant', content: r.reply });
+  } catch (x) {
+    chatHistory.push({ role: 'assistant', content: `⚠️ ${x.message}` });
+  }
+  chatBusy = false;
+  render();
+}
+
 // ---------- tab: rules & info (same content as the welcome page) ----------
 function rulesHtml() {
   return `<div class="section-head fade-up"><div><h2>Rules &amp; Info</h2><p>Everything about Capstone team formation, straight from the official guidelines</p></div></div>
@@ -896,6 +942,19 @@ function bindActions() {
     const el = $(id);
     if (el) el.onchange = () => { sFilters[key] = el.value; searchStudents(); };
   };
+  // assistant chat
+  const chatForm = $('chatForm');
+  if (chatForm)
+    chatForm.onsubmit = (e) => {
+      e.preventDefault();
+      const v = $('chatInput').value;
+      $('chatInput').value = '';
+      sendChat(v);
+    };
+  document.querySelectorAll('.chat-suggest').forEach((b) => {
+    b.onclick = () => sendChat(b.textContent);
+  });
+
   // mentors tab filters
   const mQ = $('mQ');
   if (mQ) mQ.oninput = () => { mFilters.q = mQ.value; renderMentors(); };
