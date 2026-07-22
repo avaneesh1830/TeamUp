@@ -11,7 +11,7 @@
     --A:#dcedda; --Ai:#123a15; --B:#fff2cc; --Bi:#6d5300; --C:#f9dedc; --Ci:#5a1512;
   }
   body { font-family:'Helvetica Neue',Arial,sans-serif; color:var(--ink); font-size:10px; line-height:1.5; }
-  .page { width:210mm; min-height:297mm; padding:0; position:relative; page-break-after:always; overflow:hidden; }
+  .page { width:210mm; min-height:297mm; position:relative; page-break-after:always; overflow:hidden; }
   .page:last-child { page-break-after:auto; }
 
   /* ---------- cover ---------- */
@@ -19,16 +19,16 @@
   .brand { font-size:40px; font-weight:800; letter-spacing:-1px; }
   .brand span { color:#bfe6a3; }
   .tag { display:inline-block; margin-top:6px; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.3); padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.3px; }
-  .cover h1 { font-size:30px; font-weight:800; line-height:1.15; margin:44mm 0 10px; max-width:150mm; }
+  .cover h1 { font-size:30px; font-weight:800; line-height:1.15; margin:40mm 0 10px; max-width:150mm; }
   .cover .lede { font-size:13px; max-width:150mm; color:#e8f3df; line-height:1.65; }
-  .cover-stats { display:flex; gap:10px; margin-top:20mm; flex-wrap:wrap; }
+  .cover-stats { display:flex; gap:10px; margin-top:18mm; flex-wrap:wrap; }
   .cstat { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:12px; padding:14px 16px; min-width:120px; }
   .cstat b { display:block; font-size:22px; font-weight:800; color:#fff; }
   .cstat span { font-size:9.5px; color:#dcefce; text-transform:uppercase; letter-spacing:.4px; }
   .cover-foot { position:absolute; bottom:18mm; left:20mm; right:20mm; font-size:10px; color:#cfe6bd; border-top:1px solid rgba(255,255,255,.25); padding-top:10px; display:flex; justify-content:space-between; }
 
   /* ---------- content ---------- */
-  .content { padding:16mm 16mm 14mm; }
+  .content { padding:15mm 15mm 12mm; }
   .kicker { color:var(--g); font-size:10px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; }
   h2 { font-size:19px; font-weight:800; margin:3px 0 12px; }
   h3 { font-size:12px; font-weight:800; margin:0 0 3px; }
@@ -41,41 +41,20 @@
   .feat h3 { margin-top:5px; }
   .feat p { color:var(--sub); font-size:9.5px; line-height:1.5; margin-top:3px; }
 
-  .section { margin-top:15px; }
-  .divider { height:1px; background:var(--line); margin:16px 0; }
-
-  /* ---------- UI preview frames ---------- */
-  .frame { border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 6px 18px rgba(20,30,10,.08); background:#eef4e8; }
-  .frame .bar { background:#e4ecdd; padding:6px 10px; display:flex; align-items:center; gap:5px; border-bottom:1px solid var(--line); }
-  .dot { width:8px; height:8px; border-radius:50%; }
-  .frame .body { padding:11px; background:linear-gradient(160deg,#e9f1e2,#f4f8ef); }
-  .capt { font-size:9px; color:var(--sub); text-align:center; margin-top:5px; }
-
-  .navmini { display:flex; gap:7px; font-size:8.5px; font-weight:700; color:var(--sub); margin-bottom:9px; }
-  .navmini .on { color:var(--g); border-bottom:2px solid var(--g); padding-bottom:2px; }
-
-  .tcard { background:#fff; border:1px solid var(--line); border-radius:9px; padding:9px; margin-bottom:7px; }
-  .tcard h4 { font-size:11px; font-weight:800; }
-  .row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
-  .chip { font-size:7.5px; font-weight:700; padding:2px 7px; border-radius:6px; }
-  .c-br{background:var(--g);color:#fff;} .c-A{background:var(--A);color:var(--Ai);} .c-B{background:var(--B);color:var(--Bi);} .c-C{background:var(--C);color:var(--Ci);}
-  .c-m{background:#e7e0f2;color:#5a4a8a;} .c-open{background:var(--A);color:var(--Ai);} .c-cnt{color:var(--sub);font-size:8px;font-weight:700;}
-  .btn { background:var(--g); color:#fff; font-size:8px; font-weight:800; padding:5px 10px; border-radius:20px; }
-  .btnq { background:#e9f1e2; color:var(--g); border:1px solid #cfe0c0; }
-  .avatar { width:20px; height:20px; border-radius:50%; background:var(--g); color:#fff; font-size:8px; font-weight:800; display:flex; align-items:center; justify-content:center; }
-  .mrow { display:flex; align-items:center; gap:6px; padding:5px 0; border-bottom:1px dashed var(--line); }
-  .mrow:last-child{border-bottom:none;}
-
-  .lcard { background:#fff; border-radius:14px; padding:14px; text-align:center; box-shadow:0 4px 14px rgba(20,30,10,.1); max-width:210px; margin:0 auto; }
-  .seg { display:flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; margin:9px 0; }
-  .seg div { flex:1; text-align:center; font-size:8.5px; font-weight:700; padding:5px; color:var(--sub); }
-  .seg .on { background:var(--gc); color:var(--goc); }
-  .inp { border:1px solid var(--line); border-bottom:2px solid var(--line); border-radius:4px 4px 0 0; background:var(--wash); padding:6px; font-size:8px; color:#9aa; text-align:left; margin:5px 0; }
-  .fullbtn { background:var(--g); color:#fff; font-size:9px; font-weight:800; padding:7px; border-radius:20px; text-align:center; margin-top:6px; }
-
-  .bubble { max-width:74%; padding:7px 10px; border-radius:12px; font-size:8.5px; margin-bottom:6px; line-height:1.4; }
-  .bu { background:var(--g); color:#fff; margin-left:auto; border-bottom-right-radius:3px; }
-  .bb { background:#e4ecdd; color:var(--ink); border-bottom-left-radius:3px; }
+  /* ---------- screenshot walkthrough ---------- */
+  .shot { border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 8px 22px rgba(20,30,10,.12); }
+  .shot img { width:100%; display:block; }
+  .content.walk { display:flex; flex-direction:column; min-height:272mm; }
+  .content.walk .steps { flex:1; display:flex; flex-direction:column; justify-content:space-around; padding:6mm 0; }
+  .step { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; align-items:center; }
+  .step.rev { grid-template-columns:1fr 1.35fr; }
+  .step.rev .txt { order:2; } .step.rev .shot { order:1; }
+  .txt .num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--g); color:#fff; font-weight:800; font-size:11px; margin-bottom:6px; }
+  .txt h3 { font-size:14px; }
+  .txt p { color:var(--sub); font-size:10px; line-height:1.55; margin-top:5px; }
+  ul.mini { list-style:none; margin-top:7px; }
+  ul.mini li { padding:2px 0 2px 15px; position:relative; font-size:9.5px; color:var(--sub); }
+  ul.mini li:before { content:"▸"; position:absolute; left:0; color:var(--g); font-weight:800; }
 
   table.spec { width:100%; border-collapse:collapse; font-size:9.5px; margin-top:6px; }
   table.spec th { background:var(--g); color:#fff; text-align:left; padding:7px 9px; font-size:9px; }
@@ -86,11 +65,12 @@
   .fbox { flex:1; background:var(--wash); border:1px solid var(--line); border-radius:10px; padding:9px; text-align:center; }
   .fbox b { font-size:9.5px; } .fbox span{ font-size:8px; color:var(--sub);}
   .arr { align-self:center; color:var(--g); font-weight:800; font-size:12px; }
-
-  .foot { position:absolute; bottom:8mm; left:16mm; right:16mm; border-top:1px solid var(--line); padding-top:6px; font-size:8px; color:var(--sub); display:flex; justify-content:space-between; }
+  .divider { height:1px; background:var(--line); margin:14px 0; }
   ul.tick { list-style:none; }
   ul.tick li { padding:3px 0 3px 16px; position:relative; font-size:9.5px; color:var(--sub); }
   ul.tick li:before { content:"✓"; position:absolute; left:0; color:var(--g); font-weight:800; }
+
+  .foot { position:absolute; bottom:8mm; left:15mm; right:15mm; border-top:1px solid var(--line); padding-top:6px; font-size:8px; color:var(--sub); display:flex; justify-content:space-between; }
 </style>
 </head>
 <body>
@@ -99,46 +79,37 @@
 <div class="page cover">
   <div class="brand">Team<span>Up</span></div>
   <div class="tag">Made in PESU for PESU ❤️ · Capstone 2026–28</div>
-
   <h1>Capstone team formation, done right.</h1>
   <p class="lede">A web portal that replaces the WhatsApp-group chaos of finding a project team
     with a system where the university's rules enforce themselves — and finding the <em>right</em>
     teammates takes seconds, not weeks.</p>
-
   <div class="cover-stats">
     <div class="cstat"><b>1,500+</b><span>students supported</span></div>
     <div class="cstat"><b>&lt;40ms</b><span>per request</span></div>
     <div class="cstat"><b>58</b><span>faculty mentors</span></div>
     <div class="cstat"><b>1 file</b><span>whole database</span></div>
   </div>
-
-  <div class="cover-foot">
-    <span>github.com/avaneesh1830/TeamUp</span>
-    <span>Product Sheet · v1</span>
-  </div>
+  <div class="cover-foot"><span>github.com/avaneesh1830/TeamUp</span><span>Product Sheet · v2</span></div>
 </div>
 
-<!-- ============ PAGE 2 — PROBLEM + FEATURES ============ -->
+<!-- ============ PAGE 2 — WHY + FEATURE GRID ============ -->
 <div class="page">
   <div class="content">
     <div class="kicker">The problem → the solution</div>
     <h2>Why TeamUp</h2>
     <div class="grid2">
       <div class="feat" style="background:#fbeceb;border-color:#f2cfcc;">
-        <div class="ic">😖</div>
-        <h3>Today: WhatsApp chaos</h3>
+        <div class="ic">😖</div><h3>Today: WhatsApp chaos</h3>
         <p>Every student needs a 4-person team under strict rules (grade mix, branch, gender).
-          Finding teammates over group chats is messy, and you can't even tell if a team is <em>valid</em> until it's too late.</p>
+          Finding teammates over group chats is messy, and you can't tell if a team is even <em>valid</em> until it's too late.</p>
       </div>
       <div class="feat" style="background:#eaf5e4;border-color:#cfe3c2;">
-        <div class="ic">✅</div>
-        <h3>TeamUp: rules that enforce themselves</h3>
+        <div class="ic">✅</div><h3>TeamUp: rules that enforce themselves</h3>
         <p>An invalid team is <em>impossible to form</em>. Live filters, a searchable directory,
-          faculty mentors, and an AI assistant — all on one page, on the college server.</p>
+          faculty mentors, and an AI assistant — all on one page, hosted on the college server.</p>
       </div>
     </div>
-
-    <div class="section">
+    <div style="margin-top:15px">
       <div class="kicker">Feature set</div>
       <h2>Everything a batch needs</h2>
       <div class="grid3">
@@ -154,117 +125,136 @@
       </div>
     </div>
   </div>
-  <div class="foot"><span>TeamUp — Product Sheet</span><span>2 / 4</span></div>
+  <div class="foot"><span>TeamUp — Product Sheet</span><span>2 / 6</span></div>
 </div>
 
-<!-- ============ PAGE 3 — UI PREVIEWS ============ -->
+<!-- ============ PAGE 3 — WALKTHROUGH: AUTH + BROWSE ============ -->
 <div class="page">
-  <div class="content">
-    <div class="kicker">A look inside</div>
-    <h2>The product, screen by screen</h2>
-
-    <div class="grid2" style="gap:12px;">
-      <!-- login -->
-      <div>
-        <div class="frame">
-          <div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span></div>
-          <div class="body">
-            <div class="lcard">
-              <div class="brand" style="font-size:18px;color:var(--ink)">Team<span>Up</span></div>
-              <div class="chip c-open" style="margin-top:5px;display:inline-block">Made in PESU for PESU ❤️</div>
-              <div class="seg"><div class="on">Login</div><div>Register</div></div>
-              <div class="inp">SRN — PES2UG23CS001</div>
-              <div class="inp">Password ••••••••</div>
-              <div class="fullbtn">Login</div>
-            </div>
-          </div>
-        </div>
-        <div class="capt">Login &amp; email-OTP registration</div>
+  <div class="content walk">
+    <div class="kicker">A guided walkthrough</div>
+    <h2>Getting in &amp; finding a team</h2>
+    <div class="steps">
+    <div class="step">
+      <div class="txt">
+        <div class="num">1</div><h3>Secure sign-in</h3>
+        <p>Students log in with their SRN. Registration is confirmed by an <b>email OTP</b>, and forgotten passwords reset the same way.</p>
+        <ul class="mini"><li>Salted scrypt password hashing</li><li>Email-verified accounts, unique per email</li><li>Multi-device sessions</li></ul>
       </div>
+      <div class="shot"><img src="shots/cropped/login.jpg" /></div>
+    </div>
 
-      <!-- browse -->
-      <div>
-        <div class="frame">
-          <div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span></div>
-          <div class="body">
-            <div class="navmini"><span class="on">Browse</span><span>Students</span><span>Mentors</span><span>My Team</span><span>Assistant</span></div>
-            <div class="tcard">
-              <div class="row" style="justify-content:space-between"><h4>Data Science · Big Data</h4><span class="btn btnq">Request to join</span></div>
-              <div class="row" style="margin:4px 0"><span class="chip c-br">AIML</span><span class="c-cnt">3/4 members · 1 seat left</span></div>
-              <div class="mrow"><span class="avatar" style="background:#7a9">KK</span><b style="font-size:9px">Kavya Kumar</b><span class="chip c-A">A</span><span class="chip c-m">Female</span></div>
-              <div class="row" style="margin-top:5px"><span class="c-cnt">Grade slots:</span><span class="chip c-A">A</span><span class="chip c-B">B</span><span class="chip c-C">C</span></div>
-            </div>
-            <div class="tcard">
-              <div class="row" style="justify-content:space-between"><h4>Cybersecurity</h4><span class="btn">Request to join</span></div>
-              <div class="row" style="margin:4px 0"><span class="chip c-br">CSE</span><span class="c-cnt">1/4 · 3 seats left</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="capt">Browse Teams — live filters &amp; open-slot logic</div>
+    <div class="step rev">
+      <div class="txt">
+        <div class="num">2</div><h3>One profile, everything captured</h3>
+        <p>Name, SRN, branch, gender and CGPA at signup — plus an email for recovery and an optional WhatsApp number so teammates can reach out.</p>
+        <ul class="mini"><li>CGPA becomes a private A/B/C grade to others</li><li>Branch drives who you can team with</li></ul>
       </div>
+      <div class="shot"><img src="shots/cropped/register.jpg" /></div>
+    </div>
 
-      <!-- mentors -->
-      <div>
-        <div class="frame">
-          <div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span></div>
-          <div class="body">
-            <div class="navmini"><span>Browse</span><span>Students</span><span class="on">Mentors</span><span>My Team</span></div>
-            <div class="tcard">
-              <div class="mrow"><span class="avatar">SB</span><div><b style="font-size:10px">Dr. Sandesh BJ</b><div class="c-cnt">Chairperson-CSE / Professor</div></div></div>
-              <div class="chip" style="background:#111;color:#fff;display:inline-block;margin:4px 0">✉ sandesh_bj@pes.edu</div>
-              <div class="row"><span class="chip c-open">Computer Vision</span></div>
-            </div>
-            <div class="tcard">
-              <div class="mrow"><span class="avatar" style="background:#a67">PA</span><div><b style="font-size:10px">Dr. Pooja Agarwal</b><div class="c-cnt">Professor</div></div></div>
-              <div class="row"><span class="chip c-open">AI / GenAI</span><span class="chip c-open">NLP</span><span class="chip c-open">Computer Vision</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="capt">Mentors — 58 real faculty, searchable by domain</div>
+    <div class="step">
+      <div class="txt">
+        <div class="num">3</div><h3>Browse teams looking for members</h3>
+        <p>Every open team on one screen, filtered by branch, domain and open grade slot. Cards show live seat counts and exactly which grades still fit.</p>
+        <ul class="mini"><li>"Eligible to join" shows only teams you can join</li><li>Grade-slot logic enforces the allowed combos</li></ul>
       </div>
-
-      <!-- assistant -->
-      <div>
-        <div class="frame">
-          <div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span></div>
-          <div class="body">
-            <div class="navmini"><span>Browse</span><span>Students</span><span>Mentors</span><span class="on">✨ Assistant</span></div>
-            <div class="bubble bb">Hi 👋 Ask me about teams, classmates, or mentors.</div>
-            <div class="bubble bu">Which team is Priya in?</div>
-            <div class="bubble bb">Priya Gowda (CSE, grade A) is in the <b>EdTech / HealthTech</b> team — currently full.</div>
-            <div class="bubble bu">Suggest mentors for Blockchain</div>
-            <div class="bubble bb">Dr. Animesh Giri and Dr. Chandrashekhar P Chavan list Blockchain expertise 📩</div>
-          </div>
-        </div>
-        <div class="capt">AI Assistant — tool-calling over live data</div>
-      </div>
+      <div class="shot"><img src="shots/cropped/browse.jpg" /></div>
+    </div>
     </div>
   </div>
-  <div class="foot"><span>TeamUp — Product Sheet</span><span>3 / 4</span></div>
+  <div class="foot"><span>TeamUp — Product Sheet</span><span>3 / 6</span></div>
 </div>
 
-<!-- ============ PAGE 4 — ARCHITECTURE, SCALE, SPECS ============ -->
+<!-- ============ PAGE 4 — WALKTHROUGH: STUDENTS + MENTORS + MY TEAM ============ -->
+<div class="page">
+  <div class="content walk">
+    <div class="kicker">A guided walkthrough</div>
+    <h2>Finding people &amp; forming the team</h2>
+    <div class="steps">
+    <div class="step">
+      <div class="txt">
+        <div class="num">4</div><h3>Search the whole batch</h3>
+        <p>An A→Z directory of every student — see who's still free, filter by branch, gender, grade or domain interest, and request to join their team on the spot.</p>
+        <ul class="mini"><li>Runs in SQL — instant even at 1,500 students</li><li>Interests &amp; contact shown inline</li></ul>
+      </div>
+      <div class="shot"><img src="shots/cropped/students.jpg" /></div>
+    </div>
+
+    <div class="step rev">
+      <div class="txt">
+        <div class="num">5</div><h3>Pick the right mentor</h3>
+        <p>All 58 EC-campus faculty with photos, emails and domain expertise — searchable by name or domain, so you find a guide whose interests match your project.</p>
+        <ul class="mini"><li>Parsed from the official faculty-domains sheet</li><li>One click to attach a mentor to your team</li></ul>
+      </div>
+      <div class="shot"><img src="shots/cropped/mentors.jpg" /></div>
+    </div>
+
+    <div class="step">
+      <div class="txt">
+        <div class="num">6</div><h3>Run your team</h3>
+        <p>The leader adds a description and mentor; members are listed with grades and GitHub. Leadership can be transferred, members removed, and open slots shown live.</p>
+        <ul class="mini"><li>Any member can accept requests &amp; invite students</li><li>Kick / disband / transfer are leader-only</li></ul>
+      </div>
+      <div class="shot"><img src="shots/cropped/myteam.jpg" /></div>
+    </div>
+    </div>
+  </div>
+  <div class="foot"><span>TeamUp — Product Sheet</span><span>4 / 6</span></div>
+</div>
+
+<!-- ============ PAGE 5 — WALKTHROUGH: REQUESTS + PROFILE + ASSISTANT + RULES ============ -->
+<div class="page">
+  <div class="content walk">
+    <div class="kicker">A guided walkthrough</div>
+    <h2>Requests, profile &amp; the AI assistant</h2>
+    <div class="steps">
+    <div class="step">
+      <div class="txt">
+        <div class="num">7</div><h3>Requests &amp; invitations</h3>
+        <p>Incoming join requests with a WhatsApp button to chat first, Accept / Reject, and a running list of the requests you've sent — cancel any of them anytime.</p>
+      </div>
+      <div class="shot"><img src="shots/cropped/requests.jpg" /></div>
+    </div>
+
+    <div class="step rev">
+      <div class="txt">
+        <div class="num">8</div><h3>Your showcase profile</h3>
+        <p>Edit your details, write an "about me", add your GitHub, pick interested domains, and list past projects — everything teammates see when they open your name.</p>
+      </div>
+      <div class="shot"><img src="shots/cropped/profile.jpg" /></div>
+    </div>
+
+    <div class="step">
+      <div class="txt">
+        <div class="num">9</div><h3>Ask the AI assistant</h3>
+        <p>A chatbot that answers "which teams work on FinTech?", "which team is Priya in?", or "suggest mentors for Blockchain" — using <b>tool-calling over the live database</b>, so answers are always real.</p>
+        <ul class="mini"><li>Runs on a small local model — no GPU, no data leaves campus</li></ul>
+      </div>
+      <div class="shot"><img src="shots/cropped/assistant.jpg" /></div>
+    </div>
+    </div>
+  </div>
+  <div class="foot"><span>TeamUp — Product Sheet</span><span>5 / 6</span></div>
+</div>
+
+<!-- ============ PAGE 6 — ARCHITECTURE, SCALE, SPECS ============ -->
 <div class="page">
   <div class="content">
     <div class="kicker">Built to launch</div>
     <h2>Engineered for the whole batch</h2>
-
     <div class="grid3">
       <div class="feat"><h3>⚡ Load-tested</h3><p>1,600 students / 350 teams — 20–40 ms/request; 200 concurrent requests served in ~3 s.</p></div>
       <div class="feat"><h3>🛡️ Crash-safe</h3><p>SQLite + WAL, ACID transactions. Verified with <code>kill -9</code> mid-write — zero data loss.</p></div>
       <div class="feat"><h3>💾 Backed up</h3><p>Nightly SQLite snapshots, 14-day retention. One file to copy, restore, or hand off.</p></div>
     </div>
 
-    <div class="section">
+    <div style="margin-top:14px">
       <div class="kicker">How the AI assistant works</div>
       <h2 style="font-size:15px">Answers are live data, never invented</h2>
       <div class="flow">
-        <div class="fbox"><b>Student asks</b><span>"mentors for Blockchain?"</span></div>
-        <div class="arr">→</div>
-        <div class="fbox"><b>Local LLM</b><span>picks a tool</span></div>
-        <div class="arr">→</div>
-        <div class="fbox"><b>Server runs SQL</b><span>on live database</span></div>
-        <div class="arr">→</div>
+        <div class="fbox"><b>Student asks</b><span>"mentors for Blockchain?"</span></div><div class="arr">→</div>
+        <div class="fbox"><b>Local LLM</b><span>picks a tool</span></div><div class="arr">→</div>
+        <div class="fbox"><b>Server runs SQL</b><span>on live database</span></div><div class="arr">→</div>
         <div class="fbox"><b>Model replies</b><span>with real results</span></div>
       </div>
     </div>
@@ -301,14 +291,13 @@
         <div class="kicker" style="margin-top:10px">Hosting = 3 commands</div>
         <div class="feat" style="background:#0f1a0a;color:#cfe6bd;font-family:monospace;font-size:8px;line-height:1.7;border:none;">
           docker run -d -p 3000:3000 \<br/>&nbsp;&nbsp;-v /opt/teamup/data:/data \<br/>&nbsp;&nbsp;avaneesharoor/teamup<br/><br/>
-          curl -fsSL ollama.com/install.sh | sh<br/>
-          ollama pull qwen3:4b
+          curl -fsSL ollama.com/install.sh | sh<br/>ollama pull qwen3:4b
         </div>
         <p class="muted" style="margin-top:6px;font-size:9px">One process to host, one file for the database — the entire operational footprint.</p>
       </div>
     </div>
   </div>
-  <div class="foot"><span>TeamUp · Built by Avaneesh Aroor · github.com/avaneesh1830/TeamUp · avaneesharoor/teamup</span><span>4 / 4</span></div>
+  <div class="foot"><span>TeamUp · Built by Avaneesh Aroor · github.com/avaneesh1830/TeamUp · avaneesharoor/teamup</span><span>6 / 6</span></div>
 </div>
 
 </body>

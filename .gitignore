@@ -5,3 +5,7 @@ teamup.db-shm
 teamup.db-wal
 nohup.out
 .DS_Store
+
+# product-sheet raw screenshots (keep only cropped jpgs)
+docs/sheet/shots/*.png
+docs/sheet/shots/.DS_Store
